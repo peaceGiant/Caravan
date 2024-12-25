@@ -1,0 +1,139 @@
+import math
+
+import pygame
+
+
+RANK_A = 1
+RANK_2 = 2
+RANK_3 = 3
+RANK_4 = 4
+RANK_5 = 5
+RANK_6 = 6
+RANK_7 = 7
+RANK_8 = 8
+RANK_9 = 9
+RANK_10 = 10
+RANK_J = 11
+RANK_Q = 12
+RANK_K = 13
+RANK_JOKER = 14
+
+SUIT_SPADES = 1
+SUIT_HEARTS = 2
+SUIT_DIAMONDS = 3
+SUIT_CLUBS = 4
+SUIT_BLACK_JOKER = 5
+SUIT_RED_JOKER = 6
+
+RANKS = [RANK_A, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8, RANK_9, RANK_10, RANK_J, RANK_Q, RANK_K, RANK_JOKER]
+RANK_NAMES = ['A', '02', '03', '04', '05', '06', '07', '08', '09', '10', 'J', 'Q', 'K', 'joker']
+
+SUITS = [SUIT_SPADES, SUIT_HEARTS, SUIT_DIAMONDS, SUIT_CLUBS, SUIT_BLACK_JOKER, SUIT_RED_JOKER]
+SUIT_NAMES = ['spades', 'hearts', 'diamonds', 'clubs', 'black', 'red']
+
+card_images = {}
+for rank, rank_name in zip(RANKS, RANK_NAMES):
+    if rank == RANK_JOKER:
+        card_images[(RANK_JOKER, SUIT_BLACK_JOKER)] = pygame.image.load('assets/cards/card_black_joker.png')
+        card_images[(RANK_JOKER, SUIT_RED_JOKER)] = pygame.image.load('assets/cards/card_red_joker.png')
+        continue
+    for suit, suit_name in zip(SUITS[:-2], SUIT_NAMES[:-2]):
+        card_images[(rank, suit)] = pygame.image.load(f'assets/cards/card_{suit_name}_{rank_name}.png')
+
+for card in card_images:
+    card_images[card] = pygame.transform.scale(card_images[card], (128, 128))
+
+
+class Card:
+    def __init__(self, rank, suit):
+        self.rank: int = rank
+        self.suit: int = suit
+        self.original_image = card_images[(self.rank, self.suit)].convert_alpha()
+        self.original_back_image = pygame.image.load('assets/cards/card_back.png').convert_alpha()
+        self.original_back_image = pygame.transform.scale(self.original_back_image, (128, 128))
+        self.image = card_images[(self.rank, self.suit)].convert_alpha()
+
+        self.back_image = self.original_back_image
+
+        self.hovered_image = self.image.copy()
+        self.hovered_image.fill((255, 255, 0, 255), special_flags=pygame.BLEND_MULT)
+
+        self.clicked_image = self.image.copy()
+        self.clicked_image.fill((0, 255, 0, 255), special_flags=pygame.BLEND_MULT)
+
+        self.rect = self.image.get_rect()
+        self.center = self.rect.center
+
+        self.top_left = (23 - 64, 4 - 64)
+        self.top_right = (106 - 64, 4 - 64)
+        self.bottom_left = (23 - 64, 124 - 64)
+        self.bottom_right = (106 - 64, 124 - 64)
+
+        self.angle = 0
+
+        self.is_visible = True
+        self.is_hovered = False
+        self.is_selected = False
+        self.is_flipped = False
+        self.is_flipping = False
+        self.z_index = 10
+        self.text = ''
+
+    def is_numerical(self):
+        return RANK_A <= self.rank <= RANK_10
+
+    def is_face(self):
+        return RANK_J <= self.rank <= RANK_JOKER
+
+    def hover(self):
+        return self.hovered_image, self.rect, self.hovered_image, self.rect, self.text
+
+    def click(self):
+        return self.clicked_image, self.rect, self.clicked_image, self.rect, self.text
+
+    def set_at(self, center_x, center_y, angle):
+        self.image = pygame.transform.rotate(self.original_image, angle)
+        self.back_image = pygame.transform.rotate(self.original_back_image, angle)
+        self.rect = self.image.get_rect()
+        self.rect.center = center_x, center_y
+        self.center = center_x, center_y
+
+        self.hovered_image = self.image.copy()
+        self.hovered_image.fill((255, 255, 0, 255), special_flags=pygame.BLEND_MULT)
+
+        self.clicked_image = self.image.copy()
+        self.clicked_image.fill((0, 255, 0, 255), special_flags=pygame.BLEND_MULT)
+
+        self.angle = angle
+
+    def collides_with(self, x, y):
+        vertices = [self.top_left, self.top_right, self.bottom_right, self.bottom_left]
+        radians = math.radians(self.angle)
+        sin, cos = math.sin(radians), math.cos(radians)
+        vxs = [cx * cos + cy * sin + self.center[0] for cx, cy in vertices]
+        vys = [-cx * sin + cy * cos + self.center[1] for cx, cy in vertices]
+
+        is_inside = False
+        j = len(vxs) - 1
+
+        for i in range(len(vxs)):
+            if (vys[i] > y) != (vys[j] > y) and x < (vxs[j] - vxs[i]) * (y - vys[i]) / (vys[j] - vys[i]) + vxs[i]:
+                is_inside = not is_inside
+            j = i
+
+        return is_inside
+
+    def get_image(self):
+        return self.image if self.is_flipped else self.back_image
+
+    def set_image(self, image):
+        if self.is_flipped:
+            self.image = image
+        else:
+            self.back_image = image
+
+        self.hovered_image = self.get_image().copy()
+        self.hovered_image.fill((255, 255, 0, 255), special_flags=pygame.BLEND_MULT)
+
+        self.clicked_image = self.get_image().copy()
+        self.clicked_image.fill((0, 255, 0, 255), special_flags=pygame.BLEND_MULT)
