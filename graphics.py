@@ -26,7 +26,16 @@ def init():
 
 
 def handle_events():
-    return None
+    global WINDOW_WIDTH, WINDOW_HEIGHT, display_surf
+
+    for event in pygame.event.get():
+        if event.type == pygame.VIDEORESIZE:
+            new_width = max(round(event.w, -2), 600)
+            new_height = max(round(event.h, -2), 400)
+            WINDOW_WIDTH, WINDOW_HEIGHT = new_width, new_height
+            display_surf = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT), flags=WINDOW_FLAGS)
+        else:
+            pygame.event.post(event)
 
 
 def display(state):
