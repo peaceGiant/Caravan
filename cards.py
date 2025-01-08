@@ -31,6 +31,8 @@ RANK_NAMES = ['A', '02', '03', '04', '05', '06', '07', '08', '09', '10', 'J', 'Q
 SUITS = [SUIT_SPADES, SUIT_HEARTS, SUIT_DIAMONDS, SUIT_CLUBS, SUIT_BLACK_JOKER, SUIT_RED_JOKER]
 SUIT_NAMES = ['spades', 'hearts', 'diamonds', 'clubs', 'black', 'red']
 
+CARD_SIZE = 128
+
 card_images = {}
 for rank, rank_name in zip(RANKS, RANK_NAMES):
     if rank == RANK_JOKER:
@@ -41,7 +43,7 @@ for rank, rank_name in zip(RANKS, RANK_NAMES):
         card_images[(rank, suit)] = pygame.image.load(f'assets/cards/card_{suit_name}_{rank_name}.png')
 
 for card in card_images:
-    card_images[card] = pygame.transform.scale(card_images[card], (128, 128))
+    card_images[card] = pygame.transform.scale(card_images[card], (CARD_SIZE, CARD_SIZE))
 
 
 class Card:
@@ -50,7 +52,7 @@ class Card:
         self.suit: int = suit
         self.original_image = card_images[(self.rank, self.suit)].convert_alpha()
         self.original_back_image = pygame.image.load('assets/cards/card_back.png').convert_alpha()
-        self.original_back_image = pygame.transform.scale(self.original_back_image, (128, 128))
+        self.original_back_image = pygame.transform.scale(self.original_back_image, (CARD_SIZE, CARD_SIZE))
         self.image = card_images[(self.rank, self.suit)].convert_alpha()
 
         self.back_image = self.original_back_image
@@ -64,14 +66,15 @@ class Card:
         self.rect = self.image.get_rect()
         self.center = self.rect.center
 
-        self.top_left = (23 - 64, 4 - 64)
-        self.top_right = (106 - 64, 4 - 64)
-        self.bottom_left = (23 - 64, 124 - 64)
-        self.bottom_right = (106 - 64, 124 - 64)
+        self.top_left = (int(23 * CARD_SIZE / 128) - CARD_SIZE // 2, int(4 * CARD_SIZE / 128) - CARD_SIZE // 2)
+        self.top_right = (int(106 * CARD_SIZE / 128) - CARD_SIZE // 2, int(4 * CARD_SIZE / 128) - CARD_SIZE // 2)
+        self.bottom_left = (int(23 * CARD_SIZE / 128) - CARD_SIZE // 2, int(124 * CARD_SIZE / 128) - CARD_SIZE // 2)
+        self.bottom_right = (int(106 * CARD_SIZE / 128) - CARD_SIZE // 2, int(124 * CARD_SIZE / 128) - CARD_SIZE // 2)
 
         self.angle = 0
 
         self.is_visible = True
+        self.is_hoverable = True
         self.is_hovered = False
         self.is_selected = False
         self.is_flipped = False
@@ -85,10 +88,22 @@ class Card:
     def is_face(self):
         return RANK_J <= self.rank <= RANK_JOKER
 
-    def hover(self):
+    def get_hovered_params(self):
         return self.hovered_image, self.rect, self.hovered_image, self.rect, self.text
 
-    def click(self):
+    def hover(self, x, y):
+        if self.collides_with(x, y):
+            self.is_hovered = True
+        else:
+            self.is_hovered = False
+
+    def click(self, x, y):
+        if self.collides_with(x, y):
+            self.is_selected = True
+        else:
+            self.is_selected = False
+
+    def get_clicked_params(self):
         return self.clicked_image, self.rect, self.clicked_image, self.rect, self.text
 
     def set_at(self, center_x, center_y, angle):
@@ -137,3 +152,12 @@ class Card:
 
         self.clicked_image = self.get_image().copy()
         self.clicked_image.fill((0, 255, 0, 255), special_flags=pygame.BLEND_MULT)
+
+    def dump(self):
+        return [self]
+
+    def check_if_selected(self):
+        return self.is_selected
+
+    def get_selected(self):
+        return self

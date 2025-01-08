@@ -1,4 +1,5 @@
 import pygame
+from pygame.locals import QUIT
 import math
 
 
@@ -13,7 +14,7 @@ WINDOW_FLAGS = pygame.RESIZABLE | 0
 BG_COLOR = (255, 150, 0)
 
 clock = pygame.time.Clock()
-FPS = 60
+FPS = 80
 
 
 def init():
@@ -77,7 +78,7 @@ def display(state):
         currently_hovered = None
 
     if currently_selected:
-        selected_image, selected_image_rect, image, image_rect, text = currently_selected.click()
+        selected_image, selected_image_rect, image, image_rect, text = currently_selected.get_clicked_params()
 
         display_surf.blit(selected_image, selected_image_rect)
         display_surf.blit(image, image_rect)
@@ -87,7 +88,7 @@ def display(state):
         rect.center = image_rect.center
         display_surf.blit(text_surf, rect)
     if currently_hovered:
-        hovered_image, hovered_image_rect, image, image_rect, text = currently_hovered.hover()
+        hovered_image, hovered_image_rect, image, image_rect, text = currently_hovered.get_hovered_params()
 
         display_surf.blit(hovered_image, hovered_image_rect)
         display_surf.blit(image, image_rect)
@@ -108,7 +109,10 @@ def display(state):
 
 
 def get_visible_objects(objects):
-    result = [object for object in objects.values() if object.is_visible]
+    result = []
+    for object in objects.values():
+        result.extend(object.dump())
+    result = [object for object in result if object.is_visible]
     return sorted(result, key=lambda x: x.z_index)
 
 
@@ -145,3 +149,4 @@ def display_transition_animation(old_surface, new_surface):
         pygame.time.wait(200)
         display_surf.fill(BG_COLOR)
         old_surface = new_surface
+        pygame.event.get()

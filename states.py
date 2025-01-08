@@ -1,14 +1,14 @@
 import pygame
 from pygame.locals import QUIT, MOUSEBUTTONUP, KEYUP, K_ESCAPE
 from graphics import WINDOW_WIDTH, WINDOW_HEIGHT
-import decks
+from decks import Deck, PlayingDeck
 import random
 from cards import Card
 
 
 class Context:
     def __init__(self):
-        self.state: State = TitleScreen()  # by default, start the title screen
+        self.state: State = Running()  # by default, start the title screen
 
     def handle_events(self):
         self.state = self.state.handle_events()
@@ -19,7 +19,7 @@ class Context:
 
 class State:
     def __init__(self, objects=None, animations=None, transition=False):
-        self.objects: dict[str, Button | Card] = objects if objects else {}
+        self.objects: dict[str, Button | Card | Deck] = objects if objects else {}
         self.animations: list = animations if animations else []
         self.transition = transition
 
@@ -52,11 +52,8 @@ class TitleScreen(State):
             return Quit(objects=self.objects, animations=self.animations)
 
         x, y = pygame.mouse.get_pos()
-        for object in self.objects.values():
-            if object.rect.collidepoint(x, y):
-                object.is_hovered = True
-            else:
-                object.is_hovered = False
+        for button in self.objects.values():
+            button.hover(x, y)
 
         for event in pygame.event.get(MOUSEBUTTONUP):
             x, y = event.pos
@@ -83,7 +80,8 @@ class TitleScreen(State):
         play_standard_mode_button = self.objects['play_standard_mode_button']
         play_standard_mode_button.is_visible = True
 
-        for offset in range(0, 301, 15):
+        animation_speed = 10
+        for offset in range(0, 301, animation_speed):
             scalar = 1 - offset / 750
             play_button.update(
                 scale=(int(WINDOW_WIDTH / 4 * scalar), int(WINDOW_HEIGHT / 4 * scalar)),
@@ -101,7 +99,8 @@ class TitleScreen(State):
         play_standard_mode_button = self.objects['play_standard_mode_button']
         play_standard_mode_button.is_clickable = False
 
-        for offset in range(0, 301, 15):
+        animation_speed = 10  # should divide 300
+        for offset in range(0, 301, animation_speed):
             scalar = (450 + offset) / 750
             play_button.update(
                 scale=(int(WINDOW_WIDTH / 4 * scalar), int(WINDOW_HEIGHT / 4 * scalar)),
@@ -122,37 +121,57 @@ class Running(State):
     def __init__(self, objects=None, animations=None, transition=False):
         super().__init__(objects, animations, transition)
 
-        deck = decks.generate_full_deck()
-        random.shuffle(deck)
-        for i in range(len(deck)):
-            self.objects[f'test_card_{i}'] = deck[i]
-            self.objects[f'test_card_{i}'].set_at(random.randint(70, 100), random.randint(70, 200), random.randint(-40, 40))
+        self.objects['player_1_deck_A_background'] = Button(0, 0, 98, 128 + 40 * 6, center_x=200, center_y=290 + 40*3, z_index=-5)
+        self.objects['player_1_deck_B_background'] = Button(0, 0, 98, 128 + 40 * 6, center_x=400, center_y=290 + 40*3, z_index=-5)
+        self.objects['player_1_deck_C_background'] = Button(0, 0, 98, 128 + 40 * 6, center_x=600, center_y=290 + 40*3, z_index=-5)
+        self.objects['player_2_deck_A_background'] = Button(0, 0, 98, 128 + 40 * 6, center_x=100, center_y=90 + 40*3, z_index=-5)
+        self.objects['player_2_deck_B_background'] = Button(0, 0, 98, 128 + 40 * 6, center_x=300, center_y=90 + 40*3, z_index=-5)
+        self.objects['player_2_deck_C_background'] = Button(0, 0, 98, 128 + 40 * 6, center_x=500, center_y=90 + 40*3, z_index=-5)
+
+        self.objects['go_back_button'] = Button(10, WINDOW_HEIGHT - 50, 80, 40, text='Go back')
+
+        self.objects['player_1_playing_deck']: PlayingDeck = PlayingDeck()
 
     def handle_events(self):
         if _check_for_quit():
             return Quit(objects=self.objects, animations=self.animations)
 
-        x, y = pygame.mouse.get_pos()
-        for object in self.objects.values():
-            if object.collides_with(x, y):
-                object.is_hovered = True
-                if not object.is_flipping:
-                    self.animations.append(self.flip_over_card_animation(object))
-                    object.is_flipping = True
-            else:
-                object.is_hovered = False
+        previously_selected = None  # store previously selected object (mainly interested in cards)
+        currently_selected = None  # store currently selected object
 
+        """
+        Handle mouse hovering over objects.
+        """
+        x, y = pygame.mouse.get_pos()
+        for key, value in self.objects.items():
+            value.hover(x, y)
+            if value.check_if_selected():
+                previously_selected = value.get_selected()
+
+        """
+        Handle mouse click on objects.
+        """
         for event in pygame.event.get(MOUSEBUTTONUP):
             x, y = event.pos
-            selected_objects = []
+
+            if self.objects['go_back_button'].collides_with(x, y):
+                return TitleScreen(transition=True)
+
             for object in self.objects.values():
-                if object.collides_with(x, y):
-                    object.is_selected = not object.is_selected
-                    selected_objects.append(object)
-                else:
-                    object.is_selected = False
-            if selected_objects:
-                self.animations.append(self.translate_card_animation(selected_objects[-1], 800, 400, -45))
+                object.click(x, y)
+                if object.check_if_selected():
+                    currently_selected = object.get_selected()
+
+        """
+        Handle scenario if card from player_1_playing_deck is played.
+        """
+        player_1_playing_deck: PlayingDeck = self.objects['player_1_playing_deck']
+        if player_1_playing_deck.contains(previously_selected):
+            if previously_selected != currently_selected and currently_selected:
+                self.animations.append(self.translate_card_animation(previously_selected, *currently_selected.center, 0))
+                player_1_playing_deck.remove_card(previously_selected)
+                self.animations.append(self.respace_player_1_hand_animation(player_1_playing_deck))
+
         return self
 
     def translate_card_animation(self, card, cx, cy, angle):
@@ -164,7 +183,7 @@ class Running(State):
             offset_y = curr_y + (cy - curr_y) * t / (animation_speed - 1)
             offset_angle = curr_angle + (angle - curr_angle) * t / (animation_speed - 1)
             card.set_at(offset_x, offset_y, offset_angle)
-            yield {key: card for key in self.objects if self.objects[key] == card}
+            yield {'anonymous_card': card}
 
     def flip_over_card_animation(self, card):
         curr_image = card.get_image()
@@ -182,6 +201,22 @@ class Running(State):
             card.is_flipped = not card.is_flipped
             card.set_at(*card.center, -card.angle)
             curr_image = card.get_image()
+
+    def respace_player_1_hand_animation(self, deck):
+        positions = list(deck.respace_cards_positions())
+        old_positions = [(*card.center, card.angle) for card in deck.cards]
+
+        animation_speed = 45
+        for t in range(animation_speed):
+            cards = []
+            for card, (x, y, angle), (curr_x, curr_y, curr_angle) in zip(deck.cards, positions, old_positions):
+                offset_x = curr_x + (x - curr_x) * t / (animation_speed - 1)
+                offset_y = curr_y + (y - curr_y) * t / (animation_speed - 1)
+                offset_angle = curr_angle + (angle - curr_angle) * t / (animation_speed - 1)
+                card.set_at(offset_x, offset_y, offset_angle)
+                cards.append(card)
+            yield {'player_1_playing_deck': PlayingDeck(cards=cards)}
+
 
 
 class Quit(State):
@@ -215,6 +250,7 @@ class Button:
         self.rect = pygame.Rect(left, top, width, height)
         if center_x and center_y:
             self.rect.center = (center_x, center_y)
+        self.center = self.rect.center
         self.text = text
 
         self.hovered_image = pygame.Surface((width + 10, height + 10)).convert_alpha()
@@ -237,12 +273,44 @@ class Button:
             self.rect = rect
         if center:
             self.rect.center = center
+        self.center = self.rect.center
 
-    def hover(self):
+    def get_hovered_params(self):
         hovered_image_rect = self.hovered_image.get_rect()
         hovered_image_rect.center = self.rect.center
 
         return self.hovered_image, hovered_image_rect, self.image, self.rect, self.text
 
+    def get_clicked_params(self):
+        hovered_image_rect = self.hovered_image.get_rect()
+        hovered_image_rect.center = self.rect.center
+
+        return self.hovered_image, hovered_image_rect, self.image, self.rect, self.text
+
+    def hover(self, x, y):
+        if self.rect.collidepoint(x, y):
+            self.is_hovered = True
+        else:
+            self.is_hovered = False
+            self.is_selected = False
+
+    def click(self, x, y):
+        if self.rect.collidepoint(x, y):
+            self.is_selected = True
+        else:
+            self.is_selected = False
+
     def get_image(self):
         return self.image
+
+    def collides_with(self, x, y):
+        return self.rect.collidepoint(x, y)
+
+    def dump(self):
+        return [self]
+
+    def check_if_selected(self):
+        return self.is_selected
+
+    def get_selected(self):
+        return self
