@@ -258,7 +258,7 @@ class Running(State):
     def add_card_to_playing_deck_animation(self, card):
         self.objects['player_1_playing_deck'].cards.append(card)
         self.objects['drawing_deck'].cards.pop(0)
-        yield self.objects.copy()
+        yield self.objects
 
 class Quit(State):
     def __init__(self, objects=None, animations=None, transition=False):
