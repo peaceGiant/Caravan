@@ -18,14 +18,9 @@ class Deck:
 
         self.is_hoverable = True
 
-
-class PlayingDeck(Deck):
-    def __init__(self, cards=None):
-        if not cards:
-            cards = generate_player_1_hand_cards(8)
-        super().__init__(cards)
-
-        self.is_selected = False
+    def add_card(self, card):
+        card.z_index = max(self.cards[-1].z_index + 1, card.z_index)
+        self.cards.append(card)
 
     def contains(self, card):
         return any(card == s_card for s_card in self.cards)
@@ -43,16 +38,9 @@ class PlayingDeck(Deck):
             reset_card.is_selected = False
 
         for card in reversed(self.cards):
-            if card.collides_with(x, y):
+            if card.collides_with(x, y) and card.is_hoverable:
                 card.click(x, y)
                 break
-
-    def respace_cards_positions(self):
-        return generate_player_1_hand_card_positions(len(self.cards))
-
-
-    def dump(self):
-        return self.cards
 
     def check_if_selected(self):
         return any(card.is_selected for card in self.cards)
@@ -61,6 +49,34 @@ class PlayingDeck(Deck):
         for card in self.cards:
             if card.is_selected:
                 return card
+
+    def dump(self):
+        return self.cards
+
+
+class PlayingDeck(Deck):
+    def __init__(self, cards=None):
+        if not cards:
+            cards = generate_player_1_hand_cards(8)
+        super().__init__(cards)
+
+        self.is_selected = False
+
+    def add_card(self, card):
+        super().add_card(card)
+        card.is_hoverable = True
+
+    def respace_cards_positions(self):
+        return generate_player_1_hand_card_positions(len(self.cards))
+
+
+class DrawingDeck(Deck):
+    def __init__(self, cards=None):
+        if not cards:
+            cards = generate_drawing_deck_cards(52)
+        super().__init__(cards)
+
+        self.is_selected = False
 
 
 def generate_all_cards():
@@ -102,6 +118,16 @@ def generate_player_1_hand_card_positions(num_cards: int = 5):
     angles = [40 * (num_cards - 1 - i) / (num_cards - 1) for i in range(num_cards)]
     return list(zip(x_coords, y_coords, angles))
 
+
+def generate_drawing_deck_cards(num_cards: int = 52):
+    cards = generate_random_cards(num_cards)
+    for i, card in enumerate(cards):
+        card.set_at(WINDOW_WIDTH - 80 - 3 * i / num_cards, WINDOW_HEIGHT // 2, 3 * i / num_cards)
+        card.is_flipped = False
+        card.is_hoverable = False
+        card.z_index = num_cards - i
+    cards[0].is_hoverable = True
+    return cards
 
 
 class Caravan:

@@ -1,9 +1,12 @@
 import pygame
 from pygame.locals import QUIT, MOUSEBUTTONUP, KEYUP, K_ESCAPE
+import graphics
 from graphics import WINDOW_WIDTH, WINDOW_HEIGHT
-from decks import Deck, PlayingDeck
+from decks import Deck, PlayingDeck, DrawingDeck
 import random
 from cards import Card
+from itertools import chain
+from copy import deepcopy
 
 
 class Context:
@@ -129,8 +132,10 @@ class Running(State):
         self.objects['player_2_deck_C_background'] = Button(0, 0, 98, 128 + 40 * 6, center_x=500, center_y=90 + 40*3, z_index=-5)
 
         self.objects['go_back_button'] = Button(10, WINDOW_HEIGHT - 50, 80, 40, text='Go back')
+        self.objects['trash_button'] = Button(WINDOW_WIDTH - 50, WINDOW_HEIGHT - 50, 40, 40, text='trash')
 
         self.objects['player_1_playing_deck']: PlayingDeck = PlayingDeck()
+        self.objects['drawing_deck']: DrawingDeck = DrawingDeck()
 
     def handle_events(self):
         if _check_for_quit():
@@ -143,7 +148,7 @@ class Running(State):
         Handle mouse hovering over objects.
         """
         x, y = pygame.mouse.get_pos()
-        for key, value in self.objects.items():
+        for value in self.objects.values():
             value.hover(x, y)
             if value.check_if_selected():
                 previously_selected = value.get_selected()
@@ -157,24 +162,48 @@ class Running(State):
             if self.objects['go_back_button'].collides_with(x, y):
                 return TitleScreen(transition=True)
 
-            for object in self.objects.values():
-                object.click(x, y)
-                if object.check_if_selected():
-                    currently_selected = object.get_selected()
+            for value in self.objects.values():
+                value.click(x, y)
+                if value.check_if_selected():
+                    currently_selected = value.get_selected()
 
         """
         Handle scenario if card from player_1_playing_deck is played.
         """
         player_1_playing_deck: PlayingDeck = self.objects['player_1_playing_deck']
         if player_1_playing_deck.contains(previously_selected):
-            if previously_selected != currently_selected and currently_selected:
-                self.animations.append(self.translate_card_animation(previously_selected, *currently_selected.center, 0))
+            if currently_selected == self.objects['trash_button']:
+                player_1_playing_deck.remove_card(previously_selected)
+                self.animations.append(self.respace_player_1_hand_animation(PlayingDeck(cards=player_1_playing_deck.cards[:])))
+
+                player_1_playing_deck.add_card(self.objects['drawing_deck'].cards[0])
+
+                self.animations.append(
+                    chain(
+                        self.translate_card_animation(previously_selected, -200, random.randint(0, WINDOW_HEIGHT), -500),
+                        self.wait_animation(.2),
+                        self.flip_over_card_animation(self.objects['drawing_deck'].cards[0]),
+                        self.wait_animation(.2),
+                        self.add_card_to_playing_deck_animation(self.objects['drawing_deck'].cards[0]),
+                        self.wait_animation(.2),
+                        self.respace_player_1_hand_animation(player_1_playing_deck)
+                    )
+                )
+
+
+            elif previously_selected != currently_selected and currently_selected:
+                at_deck = 'anonymous_card'
+                for key, value in self.objects.items():
+                    if value == currently_selected:
+                        at_deck = key
+                        break
+                self.animations.append(self.translate_card_animation(previously_selected, *currently_selected.center, 0, at_deck=at_deck))
                 player_1_playing_deck.remove_card(previously_selected)
                 self.animations.append(self.respace_player_1_hand_animation(player_1_playing_deck))
 
         return self
 
-    def translate_card_animation(self, card, cx, cy, angle):
+    def translate_card_animation(self, card, cx, cy, angle, at_deck='anonymous_card'):
         curr_x, curr_y = card.center
         curr_angle = card.angle
         animation_speed = 45
@@ -184,18 +213,23 @@ class Running(State):
             offset_angle = curr_angle + (angle - curr_angle) * t / (animation_speed - 1)
             card.set_at(offset_x, offset_y, offset_angle)
             yield {'anonymous_card': card}
+        for key, value in self.objects.items():
+            if key == at_deck and at_deck != 'anonymous_card':
+                self.objects[at_deck] = card
+                # value.cards.append(card)
+                break
 
     def flip_over_card_animation(self, card):
         curr_image = card.get_image()
         image_w, image_h = curr_image.get_size()
-        animation_speed = 15
+        animation_speed = 20
         for ts in [range(animation_speed), range(animation_speed, -1, -1)]:
             for t in ts:
                 offset_image_w = image_w * (1 - t / animation_speed)
                 offset_image_h = image_h * (1 + 0.2 * t / animation_speed)
                 offset_image = pygame.transform.scale(curr_image, (offset_image_w, offset_image_h))
                 card.set_image(offset_image)
-                yield {key: card for key in self.objects if self.objects[key] == card}
+                yield {'anonymous_card': card}
             if ts == range(animation_speed, -1, -1):
                 continue
             card.is_flipped = not card.is_flipped
@@ -217,7 +251,14 @@ class Running(State):
                 cards.append(card)
             yield {'player_1_playing_deck': PlayingDeck(cards=cards)}
 
+    def wait_animation(self, seconds):
+        for t in range(int(graphics.FPS * seconds)):
+            yield self.objects
 
+    def add_card_to_playing_deck_animation(self, card):
+        self.objects['player_1_playing_deck'].cards.append(card)
+        self.objects['drawing_deck'].cards.pop(0)
+        yield self.objects.copy()
 
 class Quit(State):
     def __init__(self, objects=None, animations=None, transition=False):
