@@ -2,11 +2,10 @@ import pygame
 from pygame.locals import QUIT, MOUSEBUTTONUP, KEYUP, K_ESCAPE
 import graphics
 from graphics import WINDOW_WIDTH, WINDOW_HEIGHT
-from decks import Deck, PlayingDeck, DrawingDeck
+from decks import *
 import random
 from cards import Card
 from itertools import chain
-from copy import deepcopy
 
 
 class Context:
@@ -124,12 +123,27 @@ class Running(State):
     def __init__(self, objects=None, animations=None, transition=False):
         super().__init__(objects, animations, transition)
 
-        self.objects['player_1_deck_A_background'] = Button(0, 0, 98, 128 + 40 * 6, center_x=200, center_y=290 + 40*3, z_index=-5)
-        self.objects['player_1_deck_B_background'] = Button(0, 0, 98, 128 + 40 * 6, center_x=400, center_y=290 + 40*3, z_index=-5)
-        self.objects['player_1_deck_C_background'] = Button(0, 0, 98, 128 + 40 * 6, center_x=600, center_y=290 + 40*3, z_index=-5)
-        self.objects['player_2_deck_A_background'] = Button(0, 0, 98, 128 + 40 * 6, center_x=100, center_y=90 + 40*3, z_index=-5)
-        self.objects['player_2_deck_B_background'] = Button(0, 0, 98, 128 + 40 * 6, center_x=300, center_y=90 + 40*3, z_index=-5)
-        self.objects['player_2_deck_C_background'] = Button(0, 0, 98, 128 + 40 * 6, center_x=500, center_y=90 + 40*3, z_index=-5)
+        # self.objects['player_1_caravan_A_background'] = Button(0, 0, 98, 128 + 40 * 6, center_x=200, center_y=290 + 40*3, z_index=-5)
+        # self.objects['player_1_caravan_B_background'] = Button(0, 0, 98, 128 + 40 * 6, center_x=400, center_y=290 + 40*3, z_index=-5)
+        # self.objects['player_1_caravan_C_background'] = Button(0, 0, 98, 128 + 40 * 6, center_x=600, center_y=290 + 40*3, z_index=-5)
+        # self.objects['player_2_caravan_A_background'] = Button(0, 0, 98, 128 + 40 * 6, center_x=100, center_y=90 + 40*3, z_index=-5)
+        # self.objects['player_2_caravan_B_background'] = Button(0, 0, 98, 128 + 40 * 6, center_x=300, center_y=90 + 40*3, z_index=-5)
+        # self.objects['player_2_caravan_C_background'] = Button(0, 0, 98, 128 + 40 * 6, center_x=500, center_y=90 + 40*3, z_index=-5)
+
+        self.objects['player_1_caravan_A'] = Caravan(player=1, caravan='A')
+        self.objects['player_1_caravan_B'] = Caravan(player=1, caravan='B')
+        self.objects['player_1_caravan_C'] = Caravan(player=1, caravan='C')
+        self.objects['player_2_caravan_A'] = Caravan(player=2, caravan='A')
+        self.objects['player_2_caravan_B'] = Caravan(player=2, caravan='B')
+        self.objects['player_2_caravan_C'] = Caravan(player=2, caravan='C')
+        self.caravan_names = [
+            'player_1_caravan_A',
+            'player_1_caravan_B',
+            'player_1_caravan_C',
+            'player_2_caravan_A',
+            'player_2_caravan_B',
+            'player_2_caravan_C'
+        ]
 
         self.objects['go_back_button'] = Button(10, WINDOW_HEIGHT - 50, 80, 40, text='Go back')
         self.objects['trash_button'] = Button(WINDOW_WIDTH - 50, WINDOW_HEIGHT - 50, 40, 40, text='trash')
@@ -189,17 +203,28 @@ class Running(State):
                         self.respace_player_1_hand_animation(player_1_playing_deck)
                     )
                 )
-
-
-            elif previously_selected != currently_selected and currently_selected:
+            elif any(self.objects[name].contains(currently_selected) for name in self.caravan_names):
                 at_deck = 'anonymous_card'
-                for key, value in self.objects.items():
-                    if value == currently_selected:
-                        at_deck = key
+                for name in self.caravan_names:
+                    if self.objects[name].contains(currently_selected):
+                        at_deck = name
                         break
-                self.animations.append(self.translate_card_animation(previously_selected, *currently_selected.center, 0, at_deck=at_deck))
-                player_1_playing_deck.remove_card(previously_selected)
-                self.animations.append(self.respace_player_1_hand_animation(player_1_playing_deck))
+                if self.objects[at_deck].check_if_move_is_valid(previously_selected, currently_selected):
+                    player_1_playing_deck.remove_card(previously_selected)
+                    self.objects[at_deck].add_card_on(previously_selected, currently_selected)
+                    currently_selected.is_selected = False
+                    self.animations.append(self.translate_card_on_top_of_card_animation(previously_selected, currently_selected, self.objects[at_deck]))
+                    self.animations.append(self.respace_player_1_hand_animation(player_1_playing_deck))
+            # elif previously_selected != currently_selected and currently_selected:
+            #     at_deck = 'anonymous_card'
+            #     for key, value in self.objects.items():
+            #         if value.get_selected() == currently_selected:
+            #             at_deck = key
+            #             break
+            #     player_1_playing_deck.remove_card(previously_selected)
+            #     self.objects[at_deck].add_card(previously_selected)
+            #     self.animations.append(self.translate_card_animation(previously_selected, *currently_selected.center, 0, at_deck=at_deck))
+            #     self.animations.append(self.respace_player_1_hand_animation(player_1_playing_deck))
 
         return self
 
@@ -259,6 +284,18 @@ class Running(State):
         self.objects['player_1_playing_deck'].cards.append(card)
         self.objects['drawing_deck'].cards.pop(0)
         yield self.objects
+
+    def translate_card_on_top_of_card_animation(self, card, on_top_of_card, deck):
+        if deck.cards[0] == on_top_of_card:
+            return self.translate_card_animation(card, *on_top_of_card.center, 0)
+        if card.is_numerical():
+            return self.translate_card_animation(card, on_top_of_card.center[0], on_top_of_card.center[1] + 40, 0)
+        if card.is_face():
+            for layer_card, adjacents in deck.layers:
+                if layer_card == on_top_of_card:
+                    offset_x = len(adjacents) * 20
+                    return self.translate_card_animation(card, on_top_of_card.center[0] + offset_x, on_top_of_card.center[1],0)
+
 
 class Quit(State):
     def __init__(self, objects=None, animations=None, transition=False):

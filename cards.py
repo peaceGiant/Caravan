@@ -110,6 +110,7 @@ class Card:
             hovered_image = self.back_image.copy()
             hovered_image.fill((255, 255, 0, 255), special_flags=pygame.BLEND_MULT)
         return hovered_image, self.rect, hovered_image, self.rect, self.text
+
     def get_clicked_params(self):
         clicked_image = self.clicked_image
         if not self.is_flipped:
@@ -172,3 +173,30 @@ class Card:
 
     def get_selected(self):
         return self
+
+
+class PlaceholderCard(Card):
+    def __init__(self):
+        super().__init__(RANK_A, SUIT_CLUBS)
+        self.original_back_image = pygame.image.load('assets/cards/card_empty_outline.png').convert_alpha()
+        self.original_back_image = pygame.transform.scale(self.original_back_image, (CARD_SIZE, CARD_SIZE))
+
+        self.back_image = self.original_back_image.copy()
+
+        self.hovered_image = pygame.image.load('assets/cards/card_empty.png').convert_alpha()
+        self.hovered_image = pygame.transform.scale(self.hovered_image, (CARD_SIZE, CARD_SIZE))
+        self.hovered_image.fill((255, 255, 0, 255), special_flags=pygame.BLEND_MULT)
+
+        self.clicked_image = self.image.copy()
+        self.clicked_image.fill((0, 255, 0, 255), special_flags=pygame.BLEND_MULT)
+
+    def get_hovered_params(self):
+        return self.hovered_image, self.rect, self.hovered_image, self.rect, self.text
+
+    def set_at(self, center_x, center_y, angle):
+        self.image = pygame.transform.rotate(self.original_image, angle)
+        self.back_image = pygame.transform.rotate(self.original_back_image, angle)
+        self.rect = self.image.get_rect()
+        self.rect.center = center_x, center_y
+        self.center = center_x, center_y
+        self.angle = angle
