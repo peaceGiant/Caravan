@@ -46,8 +46,8 @@ def display(state):
     display_surf.fill(BG_COLOR)
 
     font = pygame.font.Font(None, size=50)
-    surf = font.render(f'{state}', True, (255, 0, 255), (40, 40, 40))
-    display_surf.blit(surf, (20, 20))
+    # surf = font.render(f'{state}', True, (255, 0, 255), (40, 40, 40))
+    # display_surf.blit(surf, (20, 20))
 
     for animation in state.animations[:]:
         objects = next(animation, {})

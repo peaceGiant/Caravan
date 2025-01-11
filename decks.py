@@ -140,7 +140,36 @@ class Caravan(Deck):
         super().__init__(cards=generate_player_1_starting_caravan(player=player, caravan=caravan))
         self.layers: list[list[Card, list[Card]]] = []
         self.value = 0
+        self.suit = UNDEFINED
         self.direction = UNDEFINED
+
+    def calculate_value(self):
+        return sum([card.rank * 2 ** len([card for card in adjacents if card.rank == RANK_K]) for card, adjacents in self.layers])
+
+    def calculate_suit(self):
+        if not self.layers:
+            return UNDEFINED
+        card, adjacents = self.layers[-1]
+        suit = card.suit
+        for adj in adjacents:
+            if adj.rank == RANK_Q:
+                suit = adj.suit
+        return suit
+
+    def calculate_direction(self):
+        if len(self.layers) <= 1:
+            return UNDEFINED
+        card_1 = self.layers[-2][0]
+        card_2, adjacents = self.layers[-1]
+        direction = UNDEFINED
+        if card_1.rank > card_2.rank:
+            direction = DESC
+        else:
+            direction = ASC
+        for adj in adjacents:
+            if adj.rank == RANK_Q:
+                direction *= -1
+        return direction
 
     def add_card_on(self, card: Card, on_top_of_card: Card):
         if not self.layers:
@@ -158,7 +187,7 @@ class Caravan(Deck):
             self.value += card.rank
         if card.is_face():
             for i, (layer_card, adjacents) in enumerate(self.layers):
-                if layer_card == on_top_of_card:
+                if layer_card == on_top_of_card or on_top_of_card in adjacents:
                     card.z_index = i * 5 + len(adjacents)
                     adjacents.append(card)
                     break
@@ -175,7 +204,7 @@ class Caravan(Deck):
                 return False  # Can't insert numerical card in the middle of the deck, must be as last card
         if card.is_face():
             for layer_card, adjacents in self.layers:
-                if on_top_of_card == layer_card:
+                if on_top_of_card == layer_card or on_top_of_card in adjacents:
                     if len(adjacents) >= 3 and card.rank != RANK_J:
                         return False  # Card has reached maximum capacity
                     return True

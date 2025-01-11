@@ -123,12 +123,12 @@ class Running(State):
     def __init__(self, objects=None, animations=None, transition=False):
         super().__init__(objects, animations, transition)
 
-        # self.objects['player_1_caravan_A_background'] = Button(0, 0, 98, 128 + 40 * 6, center_x=200, center_y=290 + 40*3, z_index=-5)
-        # self.objects['player_1_caravan_B_background'] = Button(0, 0, 98, 128 + 40 * 6, center_x=400, center_y=290 + 40*3, z_index=-5)
-        # self.objects['player_1_caravan_C_background'] = Button(0, 0, 98, 128 + 40 * 6, center_x=600, center_y=290 + 40*3, z_index=-5)
-        # self.objects['player_2_caravan_A_background'] = Button(0, 0, 98, 128 + 40 * 6, center_x=100, center_y=90 + 40*3, z_index=-5)
-        # self.objects['player_2_caravan_B_background'] = Button(0, 0, 98, 128 + 40 * 6, center_x=300, center_y=90 + 40*3, z_index=-5)
-        # self.objects['player_2_caravan_C_background'] = Button(0, 0, 98, 128 + 40 * 6, center_x=500, center_y=90 + 40*3, z_index=-5)
+        # self.objects['player_1_caravan_A_background'] = Button(0, 0, 98, 128 + 40 * 6, center_x=200, center_y=290 + 40*3, z_index=-5, is_clickable=False)
+        # self.objects['player_1_caravan_B_background'] = Button(0, 0, 98, 128 + 40 * 6, center_x=400, center_y=290 + 40*3, z_index=-5, is_clickable=False)
+        # self.objects['player_1_caravan_C_background'] = Button(0, 0, 98, 128 + 40 * 6, center_x=600, center_y=290 + 40*3, z_index=-5, is_clickable=False)
+        # self.objects['player_2_caravan_A_background'] = Button(0, 0, 98, 128 + 40 * 6, center_x=100, center_y=90 + 40*3, z_index=-5, is_clickable=False)
+        # self.objects['player_2_caravan_B_background'] = Button(0, 0, 98, 128 + 40 * 6, center_x=300, center_y=90 + 40*3, z_index=-5, is_clickable=False)
+        # self.objects['player_2_caravan_C_background'] = Button(0, 0, 98, 128 + 40 * 6, center_x=500, center_y=90 + 40*3, z_index=-5, is_clickable=False)
 
         self.objects['player_1_caravan_A'] = Caravan(player=1, caravan='A')
         self.objects['player_1_caravan_B'] = Caravan(player=1, caravan='B')
@@ -157,6 +157,8 @@ class Running(State):
 
         previously_selected = None  # store previously selected object (mainly interested in cards)
         currently_selected = None  # store currently selected object
+
+        print([(self.objects[name].calculate_value(), self.objects[name].calculate_suit(), self.objects[name].calculate_direction()) for name in self.caravan_names])
 
         """
         Handle mouse hovering over objects.
@@ -292,9 +294,9 @@ class Running(State):
             return self.translate_card_animation(card, on_top_of_card.center[0], on_top_of_card.center[1] + 40, 0)
         if card.is_face():
             for layer_card, adjacents in deck.layers:
-                if layer_card == on_top_of_card:
+                if layer_card == on_top_of_card or on_top_of_card in adjacents:
                     offset_x = len(adjacents) * 20
-                    return self.translate_card_animation(card, on_top_of_card.center[0] + offset_x, on_top_of_card.center[1],0)
+                    return self.translate_card_animation(card, layer_card.center[0] + offset_x, layer_card.center[1],0)
 
 
 class Quit(State):
