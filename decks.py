@@ -138,6 +138,8 @@ def generate_drawing_deck_cards(num_cards: int = 52):
 class Caravan(Deck):
     def __init__(self, player=1, caravan='A'):
         super().__init__(cards=generate_starting_caravan(player=player, caravan=caravan))
+        self.player = player
+        self.caravan = caravan
         self.layers: list[list[Card, list[Card]]] = []
         self.value = 0
         self.suit = UNDEFINED
@@ -195,33 +197,46 @@ class Caravan(Deck):
     def check_if_move_is_valid(self, card: Card, on_top_of_card: Card):
         if card.is_numerical():
             if len(self.layers) == 0:
-                return True  # Deck is empty
+                return True  # Numerical card can be placed on an empty caravan
             elif len(self.layers) >= 7:
-                return False  # Deck has reached maximum capacity
+                return False  # Numerical card can't be placed on a caravan with max capacity
             elif (layer_card := self.layers[-1][0]) == on_top_of_card or on_top_of_card in self.layers[-1][1]:
                 if (
                         (layer_card.rank > card.rank and self.direction != ASC)
                         or (layer_card.rank < card.rank and self.direction != DESC)
                 ):
-                    return True  # Numerical card follows caravan order (direction)
+                    return True  # Numerical card follows caravan order (direction) and can be placed on the caravan
                 elif card.suit == self.suit:
-                    return True  # Numerical card matches the suit of the caravan
+                    return True  # Numerical card matches the suit of the caravan and can be placed on it
                 else:
-                    return False  # Numerical card doesn't follow caravan order (direction) nor matches the caravan suit
+                    return False  # Numerical card can't be placed on caravan as it doesn't follow caravan order (direction) nor matches the caravan suit
             else:
-                return False  # Can't insert numerical card in the middle of the deck, must be as last card
+                return False  # Numerical card can't be placed in the middle of the deck, must be placed as the last card
         if card.is_face():
             for layer_card, adjacents in self.layers:
                 if on_top_of_card == layer_card or on_top_of_card in adjacents:
                     if len(adjacents) >= 3 and card.rank != RANK_J:
                         return False  # Face card can't be placed on selected card with max capacity of face cards
                     return True  # Face card can be placed on selected card
-        return False  # Face card can't be placed on an empty deck
+        return False  # Face card can't be placed on an empty caravan
 
     def update(self):
+        if len(self.cards) == 1:
+            self.cards[0].is_visible = True
+            self.cards[0].is_hoverable = True
+            self.cards[0].is_flipped = False
         self.value = self.calculate_value()
         self.suit = self.calculate_suit()
         self.direction = self.calculate_direction()
+
+    def remove_card(self, card):
+        for i, (layer_card, adjacents) in enumerate(self.layers):
+            if card == layer_card or card in adjacents:
+                self.layers.pop(i)
+                self.cards.remove(layer_card)
+                for adj in adjacents:
+                    self.cards.remove(adj)
+                break
 
 
 def generate_starting_caravan(player: int = 1, caravan: str = 'A'):
@@ -233,5 +248,5 @@ def generate_starting_caravan(player: int = 1, caravan: str = 'A'):
     cards[0].is_hoverable = True
     cards[0].is_flipped = False
     cards[0].set_at(starting_x[player] + offset_x[caravan], starting_y[player], 0)
-    cards[0].z_index = 100
+    cards[0].z_index = -10
     return cards

@@ -158,20 +158,21 @@ class Running(State):
         previously_selected = None  # store previously selected object (mainly interested in cards)
         currently_selected = None  # store currently selected object
 
-        print([(self.objects[name].calculate_value(), self.objects[name].calculate_suit(), self.objects[name].calculate_direction()) for name in self.caravan_names])
+        # print([(self.objects[name].calculate_value(), self.objects[name].calculate_suit(), self.objects[name].calculate_direction()) for name in self.caravan_names])
+        print(str([str(card) for name in self.caravan_names for card in self.objects[name].cards]))
 
-        """
-        Handle mouse hovering over objects.
-        """
+        # """
+        # Handle mouse hovering over objects.
+        # """
         x, y = pygame.mouse.get_pos()
         for value in self.objects.values():
             value.hover(x, y)
             if value.check_if_selected():
                 previously_selected = value.get_selected()
 
-        """
-        Handle mouse click on objects.
-        """
+        # """
+        # Handle mouse click on objects.
+        # """
         for event in pygame.event.get(MOUSEBUTTONUP):
             x, y = event.pos
 
@@ -183,11 +184,14 @@ class Running(State):
                 if value.check_if_selected():
                     currently_selected = value.get_selected()
 
-        """
-        Handle scenario if card from player_1_playing_deck is played.
-        """
+        # """
+        # Handle scenario if card from player_1_playing_deck is played.
+        # """
         player_1_playing_deck: PlayingDeck = self.objects['player_1_playing_deck']
         if player_1_playing_deck.contains(previously_selected):
+            # """
+            # Handle card being discarded.
+            # """
             if currently_selected == self.objects['trash_button']:
                 player_1_playing_deck.remove_card(previously_selected)
                 self.animations.append(self.respace_player_1_hand_animation(PlayingDeck(cards=player_1_playing_deck.cards[:])))
@@ -205,7 +209,13 @@ class Running(State):
                         self.respace_player_1_hand_animation(player_1_playing_deck)
                     )
                 )
-            elif any(self.objects[name].contains(currently_selected) for name in self.caravan_names):
+            # """
+            # Handle card being placed on a caravan.
+            # """
+            elif (
+                    any(self.objects[name].contains(currently_selected) for name in self.caravan_names) and previously_selected.is_face()
+                    or any(self.objects[name].contains(currently_selected) for name in self.caravan_names[:3]) and previously_selected.is_numerical()
+            ):
                 at_deck = 'anonymous_card'
                 for name in self.caravan_names:
                     if self.objects[name].contains(currently_selected):
@@ -215,21 +225,28 @@ class Running(State):
                     player_1_playing_deck.remove_card(previously_selected)
                     self.objects[at_deck].add_card_on(previously_selected, currently_selected)
                     currently_selected.is_selected = False
-                    self.animations.append(chain(
-                        self.translate_card_on_top_of_card_animation(previously_selected, currently_selected, self.objects[at_deck]),
-                        self.remove_outline_card_of_caravan(self.objects[at_deck])
-                    ))
+                    if previously_selected.rank not in [RANK_J, RANK_JOKER]:
+                        self.animations.append(chain(
+                            self.translate_card_on_top_of_card_animation(previously_selected, currently_selected, self.objects[at_deck]),
+                            self.remove_outline_card_of_caravan(self.objects[at_deck])
+                        ))
+                    elif previously_selected.rank == RANK_J:
+                        self.animations.append(chain(
+                            self.translate_card_on_top_of_card_animation(previously_selected, currently_selected, self.objects[at_deck]),
+                            self.remove_outline_card_of_caravan(self.objects[at_deck]),
+                            self.wait_animation(.2),
+                            self.activate_jack_card_animation(previously_selected, currently_selected, self.objects[at_deck]),
+                            self.wait_animation(.5),
+                            self.readjust_caravan_animation(self.objects[at_deck])
+                        ))
+                    else:
+                        self.animations.append(chain(
+                            self.translate_card_on_top_of_card_animation(previously_selected, currently_selected, self.objects[at_deck]),
+                            self.remove_outline_card_of_caravan(self.objects[at_deck]),
+                            self.wait_animation(.2),
+                            # TODO: Add joker animation
+                        ))
                     self.animations.append(self.respace_player_1_hand_animation(player_1_playing_deck))
-            # elif previously_selected != currently_selected and currently_selected:
-            #     at_deck = 'anonymous_card'
-            #     for key, value in self.objects.items():
-            #         if value.get_selected() == currently_selected:
-            #             at_deck = key
-            #             break
-            #     player_1_playing_deck.remove_card(previously_selected)
-            #     self.objects[at_deck].add_card(previously_selected)
-            #     self.animations.append(self.translate_card_animation(previously_selected, *currently_selected.center, 0, at_deck=at_deck))
-            #     self.animations.append(self.respace_player_1_hand_animation(player_1_playing_deck))
 
         return self
 
@@ -243,11 +260,13 @@ class Running(State):
             offset_angle = curr_angle + (angle - curr_angle) * t / (animation_speed - 1)
             card.set_at(offset_x, offset_y, offset_angle)
             yield {'anonymous_card': card}
-        for key, value in self.objects.items():
-            if key == at_deck and at_deck != 'anonymous_card':
-                self.objects[at_deck] = card
-                # value.cards.append(card)
-                break
+        # for key, value in self.objects.items():
+        #     if key == at_deck and at_deck != 'anonymous_card':
+        #         self.objects[at_deck] = card
+        #         # value.cards.append(card)
+        #         return
+        self.objects[at_deck] = card
+        yield self.objects
 
     def flip_over_card_animation(self, card):
         curr_image = card.get_image()
@@ -307,7 +326,39 @@ class Running(State):
     def remove_outline_card_of_caravan(self, deck):
         if 'Placeholder' in str(type(deck.cards[0])):
             deck.cards[0].is_visible = False
-        yield {}
+        yield self.objects
+
+    def activate_jack_card_animation(self, card, on_top_of_card, deck):
+        for layer_card, adjacents in deck.layers:
+            if on_top_of_card == layer_card or on_top_of_card in adjacents:
+                break
+        deck.remove_card(layer_card)
+        cards = [card, layer_card, *adjacents]
+        for i, c in enumerate(cards):
+            self.animations.append(self.translate_card_animation(c, -200, random.randint(0, WINDOW_HEIGHT), -500, at_deck=f'anonymous_card_{i}'))
+        deck.update()
+        yield {f'anonymous_card_{i}': c for i, c in enumerate(cards)}
+
+    def readjust_caravan_animation(self, deck: Caravan):
+        starting_x = {1: 200, 2: 100}
+        starting_y = {1: 290, 2: 90}
+        offset_x = {'A': 0, 'B': 200, 'C': 400}
+
+        player = deck.player
+        caravan = deck.caravan
+
+        for i, (layer_card, adjacents) in enumerate(deck.layers):
+            layer_card: Card
+            self.animations.append(self.translate_card_animation(layer_card, starting_x[player] + offset_x[caravan], starting_y[player] + 40 * i, layer_card.angle, at_deck=f'ac_{i}'))
+            # layer_card.set_at(starting_x[player] + offset_x[caravan], starting_y[player] + 40 * i, layer_card.angle)
+            layer_card.z_index = i * 5
+            for j, adj in enumerate(adjacents):
+                adj: Card
+                self.animations.append(self.translate_card_animation(adj, starting_x[player] + offset_x[caravan] + 20 * (j + 1), starting_y[player] + 40 * i, adj.angle, at_deck=f'ac_{i}_{j}'))
+                # adj.set_at(starting_x[player] + offset_x[caravan] + 20 * (j + 1), starting_y[player] + 40 * i, adj.angle)
+                adj.z_index = i * 5 + j + 1
+        deck.update()
+        yield self.objects
 
 
 class Quit(State):
