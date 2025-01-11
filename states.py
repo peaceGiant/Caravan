@@ -215,7 +215,10 @@ class Running(State):
                     player_1_playing_deck.remove_card(previously_selected)
                     self.objects[at_deck].add_card_on(previously_selected, currently_selected)
                     currently_selected.is_selected = False
-                    self.animations.append(self.translate_card_on_top_of_card_animation(previously_selected, currently_selected, self.objects[at_deck]))
+                    self.animations.append(chain(
+                        self.translate_card_on_top_of_card_animation(previously_selected, currently_selected, self.objects[at_deck]),
+                        self.remove_outline_card_of_caravan(self.objects[at_deck])
+                    ))
                     self.animations.append(self.respace_player_1_hand_animation(player_1_playing_deck))
             # elif previously_selected != currently_selected and currently_selected:
             #     at_deck = 'anonymous_card'
@@ -288,15 +291,23 @@ class Running(State):
         yield self.objects
 
     def translate_card_on_top_of_card_animation(self, card, on_top_of_card, deck):
+        angle = random.randint(-5, 0)  # TODO: OCD Mode (when the angle is set to just 0)
         if deck.cards[0] == on_top_of_card:
-            return self.translate_card_animation(card, *on_top_of_card.center, 0)
+            return self.translate_card_animation(card, *on_top_of_card.center, angle)
         if card.is_numerical():
-            return self.translate_card_animation(card, on_top_of_card.center[0], on_top_of_card.center[1] + 40, 0)
+            for layer_card, adjacents in deck.layers:
+                if layer_card == on_top_of_card or on_top_of_card in adjacents:
+                    return self.translate_card_animation(card, layer_card.center[0], layer_card.center[1] + 40, angle)
         if card.is_face():
             for layer_card, adjacents in deck.layers:
                 if layer_card == on_top_of_card or on_top_of_card in adjacents:
                     offset_x = len(adjacents) * 20
-                    return self.translate_card_animation(card, layer_card.center[0] + offset_x, layer_card.center[1],0)
+                    return self.translate_card_animation(card, layer_card.center[0] + offset_x, layer_card.center[1], angle)
+
+    def remove_outline_card_of_caravan(self, deck):
+        if 'Placeholder' in str(type(deck.cards[0])):
+            deck.cards[0].is_visible = False
+        yield {}
 
 
 class Quit(State):
