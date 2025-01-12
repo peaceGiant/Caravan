@@ -175,7 +175,7 @@ class Card:
         return self
 
     def __str__(self):
-        return f'Rank: {RANK_NAMES[self.rank - 1]}, Suit: {SUIT_NAMES[self.suit - 1]}'
+        return f'{RANK_NAMES[self.rank - 1]} {SUIT_NAMES[self.suit - 1]}'
 
 
 class PlaceholderCard(Card):

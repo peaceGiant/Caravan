@@ -206,7 +206,7 @@ class Caravan(Deck):
                         or (layer_card.rank < card.rank and self.direction != DESC)
                 ):
                     return True  # Numerical card follows caravan order (direction) and can be placed on the caravan
-                elif card.suit == self.suit:
+                elif card.suit == self.suit and card.rank != layer_card.rank:
                     return True  # Numerical card matches the suit of the caravan and can be placed on it
                 else:
                     return False  # Numerical card can't be placed on caravan as it doesn't follow caravan order (direction) nor matches the caravan suit

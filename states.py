@@ -1,7 +1,7 @@
 import pygame
 from pygame.locals import QUIT, MOUSEBUTTONUP, KEYUP, K_ESCAPE
 import graphics
-from graphics import WINDOW_WIDTH, WINDOW_HEIGHT
+# from graphics import WINDOW_WIDTH, WINDOW_HEIGHT
 from decks import *
 import random
 from cards import Card
@@ -21,7 +21,7 @@ class Context:
 
 class State:
     def __init__(self, objects=None, animations=None, transition=False):
-        self.objects: dict[str, Button | Card | Deck] = objects if objects else {}
+        self.objects: dict[str, Button | Card | Deck | Caravan] = objects if objects else {}
         self.animations: list = animations if animations else []
         self.transition = transition
 
@@ -244,7 +244,9 @@ class Running(State):
                             self.translate_card_on_top_of_card_animation(previously_selected, currently_selected, self.objects[at_deck]),
                             self.remove_outline_card_of_caravan(self.objects[at_deck]),
                             self.wait_animation(.2),
-                            # TODO: Add joker animation
+                            self.activate_joker_card_animation(previously_selected, currently_selected, [self.objects[name] for name in self.caravan_names]),
+                            self.wait_animation(.5),
+                            self.readjust_caravans_animation([self.objects[name] for name in self.caravan_names])
                         ))
                     self.animations.append(self.respace_player_1_hand_animation(player_1_playing_deck))
 
@@ -329,6 +331,7 @@ class Running(State):
         yield self.objects
 
     def activate_jack_card_animation(self, card, on_top_of_card, deck):
+        layer_card, adjacents = ..., ...
         for layer_card, adjacents in deck.layers:
             if on_top_of_card == layer_card or on_top_of_card in adjacents:
                 break
@@ -349,15 +352,45 @@ class Running(State):
 
         for i, (layer_card, adjacents) in enumerate(deck.layers):
             layer_card: Card
-            self.animations.append(self.translate_card_animation(layer_card, starting_x[player] + offset_x[caravan], starting_y[player] + 40 * i, layer_card.angle, at_deck=f'ac_{i}'))
-            # layer_card.set_at(starting_x[player] + offset_x[caravan], starting_y[player] + 40 * i, layer_card.angle)
+            self.animations.append(self.translate_card_animation(layer_card, starting_x[player] + offset_x[caravan], starting_y[player] + 40 * i, layer_card.angle, at_deck=f'{str(deck)}_ac_{i}'))
             layer_card.z_index = i * 5
             for j, adj in enumerate(adjacents):
                 adj: Card
-                self.animations.append(self.translate_card_animation(adj, starting_x[player] + offset_x[caravan] + 20 * (j + 1), starting_y[player] + 40 * i, adj.angle, at_deck=f'ac_{i}_{j}'))
-                # adj.set_at(starting_x[player] + offset_x[caravan] + 20 * (j + 1), starting_y[player] + 40 * i, adj.angle)
+                self.animations.append(self.translate_card_animation(adj, starting_x[player] + offset_x[caravan] + 20 * (j + 1), starting_y[player] + 40 * i, adj.angle, at_deck=f'{str(deck)}_ac_{i}_{j}'))
                 adj.z_index = i * 5 + j + 1
         deck.update()
+        yield self.objects
+
+    def activate_joker_card_animation(self, card, on_top_of_card, decks: list[Caravan]):
+        remove_card_template = ...
+        for deck in decks:
+            if deck.contains(on_top_of_card):
+                for layer_card, adjacents in deck.layers:
+                    if layer_card == on_top_of_card or on_top_of_card in adjacents:
+                        remove_card_template = layer_card
+                        break
+
+        cards = []
+        for deck in decks:
+            for layer_card, adjacents in deck.layers:
+                if (
+                    remove_card_template.rank == RANK_A and layer_card.suit == remove_card_template.suit
+                    or remove_card_template.rank != RANK_A and layer_card.rank == remove_card_template.rank
+                ):
+                    if layer_card == remove_card_template:
+                        continue
+                    deck.remove_card(layer_card)
+                    cards.append(layer_card)
+                    cards.extend(adjacents)
+                    deck.update()
+        for i, c in enumerate(cards):
+            self.animations.append(self.translate_card_animation(c, -200, random.randint(0, WINDOW_HEIGHT), -500, at_deck=f'anonymous_card_{i}'))
+        yield {f'anonymous_card_{i}': c for i, c in enumerate(cards)}
+
+
+    def readjust_caravans_animation(self, decks):
+        for deck in decks:
+            self.animations.append(self.readjust_caravan_animation(deck))
         yield self.objects
 
 
