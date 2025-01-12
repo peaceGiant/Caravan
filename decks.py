@@ -56,9 +56,13 @@ class Deck:
 
 
 class PlayingDeck(Deck):
-    def __init__(self, cards=None):
+    def __init__(self, player=1, cards=None):
+        self.player = player
         if cards is None:
-            cards = generate_player_1_hand_cards(8)
+            if self.player == 1:
+                cards = generate_player_1_hand_cards(8)
+            else:
+                cards = generate_player_2_hand_cards(8)
         super().__init__(cards)
 
         self.is_selected = False
@@ -68,13 +72,16 @@ class PlayingDeck(Deck):
         card.is_hoverable = True
 
     def respace_cards_positions(self):
-        return generate_player_1_hand_card_positions(len(self.cards))
+        if self.player == 1:
+            return generate_player_1_hand_card_positions(len(self.cards))
+        if self.player == 2:
+            return generate_player_2_hand_card_positions(len(self.cards))
 
 
 class DrawingDeck(Deck):
     def __init__(self, cards=None):
         if not cards:
-            cards = generate_drawing_deck_cards(30)
+            cards = generate_drawing_deck_1_cards(30)
         super().__init__(cards)
 
         self.is_selected = False
@@ -110,6 +117,24 @@ def generate_player_1_hand_cards(num_cards: int = 5, cards=None):
     return res
 
 
+def generate_player_2_hand_cards(num_cards: int = 5, cards=None):
+    if cards:
+        deck = cards
+    else:
+        deck = generate_random_cards(num_cards)
+
+    positions = generate_player_2_hand_card_positions(num_cards)
+    res = []
+    for i, (x, y, angle) in enumerate(positions):
+        card = deck[i]
+        card.set_at(x, y, angle)
+        card.is_flipped = False
+        card.z_index = i
+        res.append(card)
+
+    return res
+
+
 def generate_player_1_hand_card_positions(num_cards: int = 5):
     if num_cards == 0:
         return []
@@ -124,14 +149,39 @@ def generate_player_1_hand_card_positions(num_cards: int = 5):
     return list(zip(x_coords, y_coords, angles))
 
 
-def generate_drawing_deck_cards(num_cards: int = 52):
+def generate_player_2_hand_card_positions(num_cards: int = 5):
+    if num_cards == 0:
+        return []
+    if num_cards == 1:
+        return [(WINDOW_WIDTH - 50, 175, 0)]
+    x_coords = list(np.linspace(WINDOW_WIDTH - 250, WINDOW_WIDTH - 50, num_cards))
+    unit_x_coords = list(np.linspace(25, 225, num_cards))
+    unit_y_coords = list(map(lambda x: -np.sqrt(150 ** 2 * (1 + 1 / (225 ** 2) * (x - 225) ** 2)), unit_x_coords))
+    offset_x, offset_y = WINDOW_WIDTH - 50 - unit_x_coords[-1], 175 - unit_y_coords[-1]
+    y_coords = list(map(lambda y: y + offset_y - 25, unit_y_coords))
+    angles = [-40 * (num_cards - 1 - i) / (num_cards - 1) for i in range(num_cards)]
+    return list(zip(x_coords, y_coords, angles))
+
+
+def generate_drawing_deck_1_cards(num_cards: int = 52):
     cards = generate_random_cards(num_cards)
     for i, card in enumerate(cards):
         card.set_at(WINDOW_WIDTH - 80 - 3 * i / num_cards, WINDOW_HEIGHT // 2, 3 * i / num_cards)
         card.is_flipped = False
         card.is_hoverable = False
         card.z_index = num_cards - i
-    cards[0].is_hoverable = True
+    cards[0].is_hoverable = False
+    return cards
+
+
+def generate_drawing_deck_2_cards(num_cards: int = 52):
+    cards = generate_random_cards(num_cards)
+    for i, card in enumerate(cards):
+        card.set_at(WINDOW_WIDTH - 200 + 3 * i / num_cards, WINDOW_HEIGHT // 2, 3 * i / num_cards)
+        card.is_flipped = False
+        card.is_hoverable = False
+        card.z_index = num_cards - i
+    cards[0].is_hoverable = False
     return cards
 
 
