@@ -268,6 +268,21 @@ class Running(State):
                         ))
                     self.animations.append(self.respace_player_1_hand_animation(player_1_playing_deck))
 
+        # """
+        # Handle scenario if deck needs to be discarded.
+        # """
+        if any(self.objects[name].contains(previously_selected) for name in self.caravan_names[:3]):
+            if currently_selected == self.objects['trash_button']:
+                caravan = ...
+                for deck in [self.objects[name] for name in self.caravan_names[:3]]:
+                    if deck.contains(previously_selected):
+                        caravan = deck
+                        break
+                for i, card in enumerate(caravan.cards[1:]):
+                    caravan.remove_card(card)
+                    self.animations.append(self.translate_card_animation(card, -200, random.randint(0, WINDOW_HEIGHT), -500, at_deck=f'anonymous_card_{i}'))
+
+
         return self
 
     def translate_card_animation(self, card, cx, cy, angle, at_deck='anonymous_card'):
@@ -279,14 +294,14 @@ class Running(State):
             offset_y = curr_y + (cy - curr_y) * t / (animation_speed - 1)
             offset_angle = curr_angle + (angle - curr_angle) * t / (animation_speed - 1)
             card.set_at(offset_x, offset_y, offset_angle)
-            yield {'anonymous_card': card}
+            yield {at_deck: card}
         # for key, value in self.objects.items():
         #     if key == at_deck and at_deck != 'anonymous_card':
         #         self.objects[at_deck] = card
         #         # value.cards.append(card)
         #         return
-        self.objects[at_deck] = card
-        yield self.objects
+        # self.objects[at_deck] = card
+        # yield self.objects
 
     def flip_over_card_animation(self, card):
         curr_image = card.get_image()
