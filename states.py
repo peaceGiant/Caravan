@@ -36,18 +36,23 @@ class TitleScreen(State):
     def __init__(self, objects=None, animations=None, transition=False):
         super().__init__(objects, animations, transition)
 
-        # play_button
         self.objects['play_button'] = Button(
             0, 0, WINDOW_WIDTH // 4, WINDOW_HEIGHT // 4, WINDOW_WIDTH // 2, WINDOW_HEIGHT // 3, 'Play',
             z_index=5
         )
         self.objects['play_button'].in_neutral = True
 
-        # play_standard_mode_button
         self.objects['play_standard_mode_button'] = Button(
             0, 0, WINDOW_WIDTH // 4, WINDOW_HEIGHT // 4, WINDOW_WIDTH // 2, WINDOW_HEIGHT // 3, 'Standard Mode',
             z_index=3, is_visible=False, is_clickable=False
         )
+
+        self.objects['title_text'] = Button(
+            0, 0, WINDOW_WIDTH // 2, WINDOW_HEIGHT // 8, WINDOW_WIDTH // 2, WINDOW_HEIGHT // 8, 'Caravan',
+            z_index=3, is_visible=True, is_clickable=False, is_hoverable=False
+        )
+
+        self.animations.append(self.dancing_title_animation())
 
     def handle_events(self):
         if _check_for_quit():
@@ -117,6 +122,19 @@ class TitleScreen(State):
         self.objects['play_button'].is_clickable = True
 
         self.objects['play_standard_mode_button'].is_visible = False
+
+    def dancing_title_animation(self):
+        while True:
+            for i in range(80):
+                title_text = self.objects['title_text']
+                offset = 1 if i % 8 == 0 else 0
+                title_text.update(scale=(0, 0), center=(title_text.center[0], title_text.center[1] + offset))
+                yield {'title_text': title_text}
+            for i in range(80):
+                title_text = self.objects['title_text']
+                offset = 1 if i % 8 == 0 else 0
+                title_text.update(center=(title_text.center[0], title_text.center[1] - offset))
+                yield {'title_text': title_text}
 
 
 class Running(State):
@@ -417,7 +435,7 @@ def _check_for_quit():
 
 class Button:
     def __init__(self, left, top, width, height, center_x=None, center_y=None, text='', is_clickable=True,
-                 is_hovered=False, is_visible=True, z_index=0):
+                 is_hovered=False, is_visible=True, z_index=0, is_hoverable=True):
         self.original_image = pygame.Surface((width, height)).convert_alpha()
         self.original_image.fill((255, 255, 255, 255))
         self.image = pygame.Surface((width, height)).convert_alpha()
@@ -432,6 +450,7 @@ class Button:
         self.hovered_image.fill((255, 255, 0, 255))
 
         self.is_clickable = is_clickable
+        self.is_hoverable = is_hoverable
         self.is_hovered = is_hovered
         self.is_visible = is_visible
         self.z_index = z_index
@@ -463,7 +482,7 @@ class Button:
         return self.hovered_image, hovered_image_rect, self.image, self.rect, self.text
 
     def hover(self, x, y):
-        if self.rect.collidepoint(x, y):
+        if self.rect.collidepoint(x, y) and self.is_hoverable:
             self.is_hovered = True
         else:
             self.is_hovered = False

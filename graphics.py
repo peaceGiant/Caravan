@@ -24,6 +24,9 @@ def init():
         flags=WINDOW_FLAGS
     )
     pygame.display.set_caption('Caravan')
+    pygame.mixer.init()
+    pygame.mixer.music.load('assets/music/Smash Sketch.mp3')
+    pygame.mixer.music.play(loops=-1)
 
 
 def handle_events():
@@ -102,6 +105,11 @@ def display(state):
 
     if state.transition:
         state.transition = False
+        pygame.mixer.music.fadeout(100)
+        if 'TitleScreen' in str(type(state)):
+            pygame.mixer.music.load('assets/music/Smash Sketch.mp3')
+        elif 'Running' in str(type(state)):
+            pygame.mixer.music.load('assets/music/Thief in the Night.mp3')
         display_transition_animation(old_surface, new_surface)
 
     pygame.display.update()
@@ -145,7 +153,8 @@ def display_transition_animation(old_surface, new_surface):
                 pygame.draw.polygon(display_surf, (255, 100, 255), box_coords)
             pygame.display.update()
             clock.tick(FPS * 8.2)
-
+        if ts != range(60 + WINDOW_WIDTH // box_width * 30, -1, -1):
+            pygame.mixer.music.play(loops=-1)
         pygame.time.wait(200)
         display_surf.fill(BG_COLOR)
         old_surface = new_surface
