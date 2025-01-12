@@ -36,8 +36,8 @@ CARD_SIZE = 128
 card_images = {}
 for rank, rank_name in zip(RANKS, RANK_NAMES):
     if rank == RANK_JOKER:
-        card_images[(RANK_JOKER, SUIT_BLACK_JOKER)] = pygame.image.load('assets/cards/card_black_joker.png')
-        card_images[(RANK_JOKER, SUIT_RED_JOKER)] = pygame.image.load('assets/cards/card_red_joker.png')
+        card_images[(RANK_JOKER, SUIT_BLACK_JOKER)] = pygame.image.load('assets/cards/card_black_joker_alt.png')
+        card_images[(RANK_JOKER, SUIT_RED_JOKER)] = pygame.image.load('assets/cards/card_red_joker_alt.png')
         continue
     for suit, suit_name in zip(SUITS[:-2], SUIT_NAMES[:-2]):
         card_images[(rank, suit)] = pygame.image.load(f'assets/cards/card_{suit_name}_{rank_name}.png')

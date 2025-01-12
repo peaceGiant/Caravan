@@ -221,6 +221,10 @@ class Caravan(Deck):
         return False  # Face card can't be placed on an empty caravan
 
     def update(self):
+        for i, (layer_card, adjacents) in enumerate(self.layers):
+            layer_card.z_index = i * 5
+            for j, adj in enumerate(adjacents):
+                adj.z_index = i * 5 + j + 1
         if len(self.cards) == 1:
             self.cards[0].is_visible = True
             self.cards[0].is_hoverable = True
@@ -237,6 +241,7 @@ class Caravan(Deck):
                 for adj in adjacents:
                     self.cards.remove(adj)
                 break
+        self.update()
 
 
 def generate_starting_caravan(player: int = 1, caravan: str = 'A'):
