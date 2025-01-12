@@ -316,6 +316,9 @@ class Running(State):
                     self.animations.append(self.translate_card_animation(card, -200, random.randint(0, WINDOW_HEIGHT), -500, at_deck=f'anonymous_card_{i}'))
                 return self
 
+        # """
+        # Player 2 turn handling.
+        # """
         if not self.player_1_turn and not self.animation_cooldown:
             self.player_1_turn = True
             move_type, move = self.player_2.select_next_move(self.objects['player_2_playing_deck'], [self.objects[name] for name in self.caravan_names])
@@ -370,6 +373,20 @@ class Running(State):
                         self.wait_animation(.5),
                         self.readjust_caravans_animation([self.objects[name] for name in self.caravan_names])
                     ))
+                player_2_playing_deck = self.objects['player_2_playing_deck']
+                if len(player_2_playing_deck.cards) < 5:
+                    player_2_playing_deck.add_card(top_card := self.objects['drawing_deck_2'].cards[0])
+                    self.objects['drawing_deck_2'].remove_card(top_card)
+
+                    last_animation = self.animations.pop()
+                    self.animations.append(self.respace_player_hand_animation(PlayingDeck(cards=player_2_playing_deck.cards[:-1], player=2), player=2))
+                    self.animations.append(chain(
+                        last_animation,
+                        self.wait_animation(.2),
+                        self.respace_player_hand_animation(player_2_playing_deck, player=2)
+                    ))
+                else:
+                    self.animations.append(self.respace_player_hand_animation(player_2_playing_deck, player=2))
 
         return self
 
