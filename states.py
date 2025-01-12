@@ -405,7 +405,7 @@ class Running(State):
 
         cards = []
         for deck in decks:
-            for layer_card, adjacents in deck.layers:
+            for layer_card, adjacents in deck.layers[:]:
                 if (
                     remove_card_template.rank == RANK_A and layer_card.suit == remove_card_template.suit
                     or remove_card_template.rank != RANK_A and layer_card.rank == remove_card_template.rank
