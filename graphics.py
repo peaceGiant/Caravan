@@ -24,6 +24,8 @@ def init():
         flags=WINDOW_FLAGS
     )
     pygame.display.set_caption('Caravan')
+    pygame.display.set_icon(pygame.image.load('assets/cards/card_red_joker.png'))
+
     pygame.mixer.init()
     pygame.mixer.music.load('assets/music/Smash Sketch.mp3')
     pygame.mixer.music.play(loops=-1)
