@@ -184,6 +184,9 @@ class Running(State):
         if _check_for_quit():
             return Quit(objects=self.objects, animations=self.animations)
 
+        for name in self.caravan_names:
+            self.objects[name].update()
+
         previously_selected = None  # store previously selected object (mainly interested in cards)
         currently_selected = None  # store currently selected object
 
@@ -517,7 +520,7 @@ class Running(State):
                     deck.update()
         for i, c in enumerate(cards):
             self.animations.append(self.translate_card_animation(c, -200, random.randint(0, WINDOW_HEIGHT), -500, at_deck=f'anonymous_card_{i}'))
-        yield {f'anonymous_card_{i}': c for i, c in enumerate(cards)}
+        yield {f'anonymous_card_{i}': c for i, c in enumerate(cards)}  # TODO: Fix this (When joker is played, and it removes no other cards, this returns {} and thus the animation is removed from self.animations preventing player from drawing a card
 
     def readjust_caravans_animation(self, decks):
         for deck in decks:
