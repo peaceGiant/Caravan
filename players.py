@@ -58,8 +58,13 @@ class RandomPlayer(Player):
             return PLAY_CARD, random.choice(possibilities[PLAY_CARD])
         elif r < 0.99 and possibilities[DISCARD_CARD]:
             return DISCARD_CARD, random.choice(possibilities[DISCARD_CARD])
-        else:
+        elif possibilities[DISCARD_CARAVAN]:
             return DISCARD_CARAVAN, random.choice(possibilities[DISCARD_CARAVAN])
+        else:
+            if possibilities[PLAY_CARD]:
+                return PLAY_CARD, random.choice(possibilities[PLAY_CARD])
+            else:
+                return DISCARD_CARD, random.choice(possibilities[DISCARD_CARD])
 
     def select_next_move_in_beginning_phase(self, possibilities):
         result = []
