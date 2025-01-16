@@ -142,12 +142,7 @@ class Running(State):
     def __init__(self, objects=None, animations=None, transition=False):
         super().__init__(objects, animations, transition)
 
-        # self.objects['player_1_caravan_A_background'] = Button(0, 0, 98, 128 + 40 * 6, center_x=200, center_y=290 + 40*3, z_index=-5, is_clickable=False)
-        # self.objects['player_1_caravan_B_background'] = Button(0, 0, 98, 128 + 40 * 6, center_x=400, center_y=290 + 40*3, z_index=-5, is_clickable=False)
-        # self.objects['player_1_caravan_C_background'] = Button(0, 0, 98, 128 + 40 * 6, center_x=600, center_y=290 + 40*3, z_index=-5, is_clickable=False)
-        # self.objects['player_2_caravan_A_background'] = Button(0, 0, 98, 128 + 40 * 6, center_x=100, center_y=90 + 40*3, z_index=-5, is_clickable=False)
-        # self.objects['player_2_caravan_B_background'] = Button(0, 0, 98, 128 + 40 * 6, center_x=300, center_y=90 + 40*3, z_index=-5, is_clickable=False)
-        # self.objects['player_2_caravan_C_background'] = Button(0, 0, 98, 128 + 40 * 6, center_x=500, center_y=90 + 40*3, z_index=-5, is_clickable=False)
+        self.objects['anonymous_button'] = Button(0, 0, 0, 0, is_visible=False)
 
         self.objects['player_1_caravan_A'] = Caravan(player=1, caravan='A')
         self.objects['player_1_caravan_B'] = Caravan(player=1, caravan='B')
@@ -439,12 +434,12 @@ class Running(State):
 
     def wait_animation(self, seconds):
         for t in range(int(graphics.FPS * seconds)):
-            yield self.objects
+            yield {'anonymous_button': self.objects['anonymous_button']}
 
     def add_card_to_playing_deck_animation(self, card):
         self.objects['player_1_playing_deck'].cards.append(card)
         self.objects['drawing_deck'].cards.pop(0)
-        yield self.objects
+        yield {'anonymous_button': self.objects['anonymous_button']}
 
     def translate_card_on_top_of_card_animation(self, card, on_top_of_card, deck):
         angle = random.randint(-5, 0)  # TODO: OCD Mode (when the angle is set to just 0)
@@ -463,7 +458,7 @@ class Running(State):
     def remove_outline_card_of_caravan(self, deck):
         if 'Placeholder' in str(type(deck.cards[0])):
             deck.cards[0].is_visible = False
-        yield self.objects
+        yield {'anonymous_button': self.objects['anonymous_button']}
 
     def activate_jack_card_animation(self, card, on_top_of_card, deck):
         layer_card, adjacents = ..., ...
@@ -494,7 +489,7 @@ class Running(State):
                 self.animations.append(self.translate_card_animation(adj, starting_x[player] + offset_x[caravan] + 20 * (j + 1), starting_y[player] + 40 * i, adj.angle, at_deck=f'{str(deck)}_ac_{i}_{j}'))
                 adj.z_index = i * 5 + j + 1
         deck.update()
-        yield self.objects
+        yield {'anonymous_button': self.objects['anonymous_button']}
 
     def activate_joker_card_animation(self, card, on_top_of_card, decks: list[Caravan]):
         remove_card_template = ...
@@ -525,12 +520,12 @@ class Running(State):
     def readjust_caravans_animation(self, decks):
         for deck in decks:
             self.animations.append(self.readjust_caravan_animation(deck))
-        yield self.objects
+        yield {'anonymous_button': self.objects['anonymous_button']}
 
     def animation_cooldown_handler(self):
         while True:
             self.animation_cooldown = False if len(self.animations) == 1 else True
-            yield self.objects
+            yield {'anonymous_button': self.objects['anonymous_button']}
 
 
 class Quit(State):
