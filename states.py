@@ -162,11 +162,15 @@ class Running(State):
         self.objects['go_back_button'] = Button(10, WINDOW_HEIGHT - 50, 80, 40, text='Go back')
         self.objects['trash_button'] = Button(WINDOW_WIDTH - 50, WINDOW_HEIGHT - 50, 40, 40, text='trash')
 
-        self.objects['player_1_playing_deck']: PlayingDeck = PlayingDeck(player=1)
-        self.objects['drawing_deck']: DrawingDeck = DrawingDeck()
+        hand_cards, draw_cards = generate_valid_player_and_drawing_deck()
 
-        self.objects['player_2_playing_deck']: PlayingDeck = PlayingDeck(player=2, cards=generate_player_2_hand_cards(8))
-        self.objects['drawing_deck_2']: DrawingDeck = DrawingDeck(cards=generate_drawing_deck_2_cards())
+        self.objects['player_1_playing_deck']: PlayingDeck = PlayingDeck(player=1, cards=generate_player_1_hand_cards(8, cards=hand_cards))
+        self.objects['drawing_deck']: DrawingDeck = DrawingDeck(cards=generate_drawing_deck_1_cards(54, cards=draw_cards))
+
+        hand_cards, draw_cards = generate_valid_player_and_drawing_deck()
+
+        self.objects['player_2_playing_deck']: PlayingDeck = PlayingDeck(player=2, cards=generate_player_2_hand_cards(8, cards=hand_cards))
+        self.objects['drawing_deck_2']: DrawingDeck = DrawingDeck(cards=generate_drawing_deck_2_cards(54, cards=draw_cards))
 
         self.player_1_turn = True
         self.player_1_beginning_phase_counter = 3

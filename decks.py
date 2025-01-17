@@ -168,8 +168,9 @@ def generate_player_2_hand_card_positions(num_cards: int = 5):
     return list(zip(x_coords, y_coords, angles))
 
 
-def generate_drawing_deck_1_cards(num_cards: int = 52):
-    cards = generate_random_cards(num_cards)
+def generate_drawing_deck_1_cards(num_cards: int = 52, cards: list[Card] = None):
+    if not cards:
+        cards = generate_random_cards(num_cards)
     for i, card in enumerate(cards):
         card.set_at(WINDOW_WIDTH - 80 - 3 * i / num_cards, WINDOW_HEIGHT // 2, 3 * i / num_cards)
         card.is_flipped = False
@@ -178,8 +179,9 @@ def generate_drawing_deck_1_cards(num_cards: int = 52):
     return cards
 
 
-def generate_drawing_deck_2_cards(num_cards: int = 52):
-    cards = generate_random_cards(num_cards)
+def generate_drawing_deck_2_cards(num_cards: int = 52, cards: list[Card] = None):
+    if not cards:
+        cards = generate_random_cards(num_cards)
     for i, card in enumerate(cards):
         card.set_at(WINDOW_WIDTH - 200 + 3 * i / num_cards, WINDOW_HEIGHT // 2, 3 * i / num_cards)
         card.is_flipped = False
@@ -306,3 +308,13 @@ def generate_starting_caravan(player: int = 1, caravan: str = 'A'):
     cards[0].set_at(starting_x[player] + offset_x[caravan], starting_y[player], 0)
     cards[0].z_index = -10
     return cards
+
+
+def generate_valid_player_and_drawing_deck(num_cards: int = 54):
+    cards = generate_all_cards()[:num_cards]
+    numeric = list(random.sample(cards[:40], 3))
+    cards = [card for card in cards if card not in numeric]
+    random.shuffle(cards)
+    res = numeric + cards[:5], cards[5:]
+
+    return res
