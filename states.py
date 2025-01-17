@@ -215,6 +215,17 @@ class Running(State):
                     currently_selected = value.get_selected()
 
         # """
+        # Handle player victory.
+        # """
+        if win_flag := self.check_winning_condition() is not None:
+            if win_flag == 1:
+                if len(self.animations) == 1:
+                    self.animations.append(self.win_animation())
+            else:
+                if len(self.animations) == 1:
+                    self.animations.append(self.lose_animation())
+
+        # """
         # Handle scenario if card from player_1_playing_deck is played.
         # """
         player_1_playing_deck: PlayingDeck = self.objects['player_1_playing_deck']
@@ -535,6 +546,37 @@ class Running(State):
                     if 'anonymous' in key and 'button' not in key:
                         del self.objects[key]
             yield {'anonymous_button': self.objects['anonymous_button']}
+
+    def check_winning_condition(self):
+        c1, c2, c3, o1, o2, o3 = [self.objects[name].calculate_value() for name in self.caravan_names]
+        if (
+                not (21 <= c1 <= 26 or 21 <= o1 <= 26)
+                or not (21 <= c2 <= 26 or 21 <= o2 <= 26)
+                or not (21 <= c3 <= 26 or 21 <= o3 <= 26)
+        ):
+            return None  # There exists a set of competing caravans that does not contain a sold caravan
+
+        if c1 == o1 or c2 == o2 or c3 == o3:
+            return None  # There exists a set of competing caravans that are tied
+
+        p1_win_count = sum([1 if x > y else 0 for x, y in [(c1, o1), (c2, o2), (c3, o3)]])
+        return 1 if p1_win_count >= 2 else 2  # Return the number of the player that has more winning caravans
+
+    def win_animation(self):
+        while True:
+            caravans = [self.objects[name] for name in self.caravan_names[:3]]
+            for caravan in caravans:
+                for card in caravan.cards:
+                    card.set_at(*card.center, card.angle + 4)
+            yield {name: self.objects[name] for name in self.caravan_names[:3]}
+
+    def lose_animation(self):
+        while True:
+            caravans = [self.objects[name] for name in self.caravan_names[3:]]
+            for caravan in caravans:
+                for card in caravan.cards:
+                    card.set_at(*card.center, card.angle - 4)
+            yield {name: self.objects[name] for name in self.caravan_names[:3]}
 
 
 class Quit(State):
