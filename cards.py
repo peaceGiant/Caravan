@@ -186,7 +186,8 @@ class PlaceholderCard(Card):
 
         self.back_image = self.original_back_image.copy()
 
-        self.hovered_image = pygame.image.load('assets/cards/card_empty.png').convert_alpha()
+        self.original_hovered_image = pygame.image.load('assets/cards/card_empty.png').convert_alpha()
+        self.hovered_image = self.original_hovered_image.copy()
         self.hovered_image = pygame.transform.scale(self.hovered_image, (CARD_SIZE, CARD_SIZE))
         self.hovered_image.fill((255, 255, 0, 255), special_flags=pygame.BLEND_MULT)
 
@@ -199,6 +200,9 @@ class PlaceholderCard(Card):
     def set_at(self, center_x, center_y, angle):
         self.image = pygame.transform.rotate(self.original_image, angle)
         self.back_image = pygame.transform.rotate(self.original_back_image, angle)
+        self.hovered_image = pygame.transform.scale(self.original_hovered_image, (CARD_SIZE, CARD_SIZE))
+        self.hovered_image = pygame.transform.rotate(self.hovered_image, angle)
+        self.hovered_image.fill((255, 255, 0, 255), special_flags=pygame.BLEND_MULT)
         self.rect = self.image.get_rect()
         self.rect.center = center_x, center_y
         self.center = center_x, center_y
