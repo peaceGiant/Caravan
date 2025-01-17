@@ -38,7 +38,8 @@ class Deck:
         for reset_card in self.cards:
             reset_card.is_selected = False
 
-        for card in reversed(self.cards):
+        z_cards = sort_cards_by_z_index(self.cards)
+        for card in z_cards:
             if card.collides_with(x, y) and card.is_hoverable:
                 card.click(x, y)
                 break
@@ -53,6 +54,10 @@ class Deck:
 
     def dump(self):
         return self.cards
+
+
+def sort_cards_by_z_index(cards: list[Card]):
+    return list(sorted(cards, key=lambda card: card.z_index, reverse=True))
 
 
 class PlayingDeck(Deck):
@@ -168,9 +173,8 @@ def generate_drawing_deck_1_cards(num_cards: int = 52):
     for i, card in enumerate(cards):
         card.set_at(WINDOW_WIDTH - 80 - 3 * i / num_cards, WINDOW_HEIGHT // 2, 3 * i / num_cards)
         card.is_flipped = False
-        card.is_hoverable = False
-        card.z_index = num_cards - i
-    cards[0].is_hoverable = False
+        card.is_hoverable = True
+        card.z_index = -i - 1
     return cards
 
 
@@ -179,9 +183,8 @@ def generate_drawing_deck_2_cards(num_cards: int = 52):
     for i, card in enumerate(cards):
         card.set_at(WINDOW_WIDTH - 200 + 3 * i / num_cards, WINDOW_HEIGHT // 2, 3 * i / num_cards)
         card.is_flipped = False
-        card.is_hoverable = False
-        card.z_index = num_cards - i
-    cards[0].is_hoverable = False
+        card.is_hoverable = True
+        card.z_index = -i - 1
     return cards
 
 
@@ -242,7 +245,6 @@ class Caravan(Deck):
                     card.z_index = i * 5 + len(adjacents)
                     adjacents.append(card)
                     break
-        self.update()
 
     def check_if_move_is_valid(self, card: Card, on_top_of_card: Card):
         if card.is_numerical():
@@ -291,7 +293,6 @@ class Caravan(Deck):
                 for adj in adjacents:
                     self.cards.remove(adj)
                 break
-        self.update()
 
 
 def generate_starting_caravan(player: int = 1, caravan: str = 'A'):

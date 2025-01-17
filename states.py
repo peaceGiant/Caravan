@@ -186,7 +186,10 @@ class Running(State):
         currently_selected = None  # store currently selected object
 
         # print([(self.objects[name].calculate_value(), self.objects[name].calculate_suit(), self.objects[name].calculate_direction()) for name in self.caravan_names])
-        # print(str([str(card) for name in self.caravan_names for card in self.objects[name].cards]))
+        # print(str([[str(card) for card in self.objects[name].cards] for name in self.caravan_names]))
+        # print(str([(card.z_index, str(card)) for name in self.caravan_names[:3] for card in self.objects[name].cards]))
+        # print(str([(card.z_index, str(card)) for name in self.caravan_names[:3] for card, _ in self.objects[name].layers]))
+        # print(len(self.objects.keys()), self.objects.keys())
 
         # """
         # Handle mouse hovering over objects.
@@ -424,11 +427,12 @@ class Running(State):
         animation_speed = 45
         for t in range(animation_speed):
             cards = []
-            for card, (x, y, angle), (curr_x, curr_y, curr_angle) in zip(deck.cards, positions, old_positions):
+            for i, (card, (x, y, angle), (curr_x, curr_y, curr_angle)) in enumerate(zip(deck.cards, positions, old_positions)):
                 offset_x = curr_x + (x - curr_x) * t / (animation_speed - 1)
                 offset_y = curr_y + (y - curr_y) * t / (animation_speed - 1)
                 offset_angle = curr_angle + (angle - curr_angle) * t / (animation_speed - 1)
                 card.set_at(offset_x, offset_y, offset_angle)
+                card.z_index = i
                 cards.append(card)
             yield {f'player_{player}_playing_deck': PlayingDeck(cards=cards, player=player)}
 
@@ -469,7 +473,7 @@ class Running(State):
         cards = [card, layer_card, *adjacents]
         for i, c in enumerate(cards):
             self.animations.append(self.translate_card_animation(c, -200, random.randint(0, WINDOW_HEIGHT), -500, at_deck=f'anonymous_card_{i}'))
-        deck.update()
+        # deck.update()
         yield {f'anonymous_card_{i}': c for i, c in enumerate(cards)}
 
     def readjust_caravan_animation(self, deck: Caravan):
@@ -482,13 +486,13 @@ class Running(State):
 
         for i, (layer_card, adjacents) in enumerate(deck.layers):
             layer_card: Card
-            self.animations.append(self.translate_card_animation(layer_card, starting_x[player] + offset_x[caravan], starting_y[player] + 40 * i, layer_card.angle, at_deck=f'{str(deck)}_ac_{i}'))
-            layer_card.z_index = i * 5
+            self.animations.append(self.translate_card_animation(layer_card, starting_x[player] + offset_x[caravan], starting_y[player] + 40 * i, layer_card.angle, at_deck=f'{str(deck)}_anonymous_card_{i}'))
+            # layer_card.z_index = i * 5
             for j, adj in enumerate(adjacents):
                 adj: Card
-                self.animations.append(self.translate_card_animation(adj, starting_x[player] + offset_x[caravan] + 20 * (j + 1), starting_y[player] + 40 * i, adj.angle, at_deck=f'{str(deck)}_ac_{i}_{j}'))
-                adj.z_index = i * 5 + j + 1
-        deck.update()
+                self.animations.append(self.translate_card_animation(adj, starting_x[player] + offset_x[caravan] + 20 * (j + 1), starting_y[player] + 40 * i, adj.angle, at_deck=f'{str(deck)}_anonymous_card__{i}_{j}'))
+                # adj.z_index = i * 5 + j + 1
+        # deck.update()
         yield {'anonymous_button': self.objects['anonymous_button']}
 
     def activate_joker_card_animation(self, card, on_top_of_card, decks: list[Caravan]):
@@ -512,10 +516,10 @@ class Running(State):
                     deck.remove_card(layer_card)
                     cards.append(layer_card)
                     cards.extend(adjacents)
-                    deck.update()
+                    # deck.update()
         for i, c in enumerate(cards):
             self.animations.append(self.translate_card_animation(c, -200, random.randint(0, WINDOW_HEIGHT), -500, at_deck=f'anonymous_card_{i}'))
-        yield {f'anonymous_card_{i}': c for i, c in enumerate(cards)}  # TODO: Fix this (When joker is played, and it removes no other cards, this returns {} and thus the animation is removed from self.animations preventing player from drawing a card
+        yield {f'anonymous_button': self.objects['anonymous_button'], **{f'anonymous_card_{i}': c for i, c in enumerate(cards)}}
 
     def readjust_caravans_animation(self, decks):
         for deck in decks:
@@ -524,7 +528,12 @@ class Running(State):
 
     def animation_cooldown_handler(self):
         while True:
-            self.animation_cooldown = False if len(self.animations) == 1 else True
+            self.animation_cooldown = True
+            if len(self.animations) == 1:
+                self.animation_cooldown = False
+                for key in list(self.objects.keys()):
+                    if 'anonymous' in key and 'button' not in key:
+                        del self.objects[key]
             yield {'anonymous_button': self.objects['anonymous_button']}
 
 
