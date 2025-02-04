@@ -144,6 +144,7 @@ def display_transition_animation(old_surface, new_surface):
         for t in ts:
             display_surf.blit(old_surface, (0, 0))
             for box in range(WINDOW_WIDTH // box_width):
+                pygame.event.get()
                 if t <= 30 * box:
                     continue
                 if t >= 30 * box + 90:
@@ -160,4 +161,3 @@ def display_transition_animation(old_surface, new_surface):
         pygame.time.wait(200)
         display_surf.fill(BG_COLOR)
         old_surface = new_surface
-        pygame.event.get()

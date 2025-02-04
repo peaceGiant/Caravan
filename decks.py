@@ -238,15 +238,14 @@ class Caravan(Deck):
         self.cards.append(card)
 
         if card.is_numerical():
-            card.z_index = len(self.layers) * 5
             self.layers.append([card, []])
             self.value += card.rank
         if card.is_face():
             for i, (layer_card, adjacents) in enumerate(self.layers):
                 if layer_card == on_top_of_card or on_top_of_card in adjacents:
-                    card.z_index = i * 5 + len(adjacents)
                     adjacents.append(card)
                     break
+        self.update()
 
     def check_if_move_is_valid(self, card: Card, on_top_of_card: Card):
         if card.is_numerical():
@@ -295,6 +294,18 @@ class Caravan(Deck):
                 for adj in adjacents:
                     self.cards.remove(adj)
                 break
+        self.update()
+    
+    def click(self, x, y):
+        for reset_card in self.cards:
+            reset_card.is_selected = False
+
+        z_cards = sort_cards_by_z_index(self.cards)
+        for card in z_cards:
+            if card.collides_with(x, y) and card.is_hoverable:
+                card.click(x, y)
+                break
+        self.update()
 
 
 def generate_starting_caravan(player: int = 1, caravan: str = 'A'):

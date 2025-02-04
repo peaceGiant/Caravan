@@ -183,9 +183,6 @@ class Running(State):
         if _check_for_quit():
             return Quit(objects=self.objects, animations=self.animations)
 
-        for name in self.caravan_names:
-            self.objects[name].update()
-
         previously_selected = None  # store previously selected object (mainly interested in cards)
         currently_selected = None  # store currently selected object
 
@@ -222,7 +219,6 @@ class Running(State):
         # Handle player victory.
         # """
         if (win_flag := self.check_winning_condition()) is not None:
-            print(win_flag)
             if win_flag == 1:
                 if len(self.animations) == 1:
                     self.animations.append(self.win_animation())
@@ -422,12 +418,12 @@ class Running(State):
         curr_image = card.get_image()
         image_w, image_h = curr_image.get_size()
         animation_speed = 20
-        card.z_index = 100
         for ts in [range(animation_speed), range(animation_speed, -1, -1)]:
             for t in ts:
                 offset_image_w = image_w * (1 - t / animation_speed)
                 offset_image_h = image_h * (1 + 0.2 * t / animation_speed)
                 offset_image = pygame.transform.scale(curr_image, (offset_image_w, offset_image_h))
+                card.z_index = 100
                 card.set_image(offset_image)
                 yield {'anonymous_card': card}
             if ts == range(animation_speed, -1, -1):
@@ -550,6 +546,8 @@ class Running(State):
                 for key in list(self.objects.keys()):
                     if 'anonymous' in key and 'button' not in key:
                         del self.objects[key]
+                for name in self.caravan_names:
+                    self.objects[name].update()
             yield {'anonymous_button': self.objects['anonymous_button']}
 
     def check_winning_condition(self):
