@@ -134,6 +134,9 @@ class Card:
         self.angle = angle
 
     def collides_with(self, x, y):
+        if not self.rect.collidepoint(x, y):
+            return False
+
         vertices = [self.top_left, self.top_right, self.bottom_right, self.bottom_left]
         radians = math.radians(self.angle)
         sin, cos = math.sin(radians), math.cos(radians)
