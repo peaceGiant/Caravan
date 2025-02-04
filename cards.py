@@ -105,6 +105,9 @@ class Card:
             self.is_selected = False
 
     def get_hovered_params(self):
+        self.hovered_image = self.image.copy()
+        self.hovered_image.fill((255, 255, 0, 255), special_flags=pygame.BLEND_MULT)
+
         hovered_image = self.hovered_image
         if not self.is_flipped:
             hovered_image = self.back_image.copy()
@@ -112,6 +115,9 @@ class Card:
         return hovered_image, self.rect, hovered_image, self.rect, self.text
 
     def get_clicked_params(self):
+        self.clicked_image = self.image.copy()
+        self.clicked_image.fill((0, 255, 0, 255), special_flags=pygame.BLEND_MULT)
+
         clicked_image = self.clicked_image
         if not self.is_flipped:
             clicked_image = self.back_image.copy()
@@ -125,11 +131,11 @@ class Card:
         self.rect.center = center_x, center_y
         self.center = center_x, center_y
 
-        self.hovered_image = self.image.copy()
-        self.hovered_image.fill((255, 255, 0, 255), special_flags=pygame.BLEND_MULT)
-
-        self.clicked_image = self.image.copy()
-        self.clicked_image.fill((0, 255, 0, 255), special_flags=pygame.BLEND_MULT)
+        # self.hovered_image = self.image.copy()
+        # self.hovered_image.fill((255, 255, 0, 255), special_flags=pygame.BLEND_MULT)
+        #
+        # self.clicked_image = self.image.copy()
+        # self.clicked_image.fill((0, 255, 0, 255), special_flags=pygame.BLEND_MULT)
 
         self.angle = angle
 
