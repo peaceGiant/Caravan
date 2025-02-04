@@ -113,6 +113,7 @@ def display(state):
         elif 'Running' in str(type(state)):
             pygame.mixer.music.load('assets/music/Thief in the Night.mp3')
         display_transition_animation(old_surface, new_surface)
+        return
 
     pygame.display.update()
     clock.tick(FPS)

@@ -21,13 +21,13 @@
   - maybe audio adjusting.
   - maybe tutorial mode can be toggled here.
 ## Running
-- [ ] Bug fix: fix flicker after state transition to running. (Hallucinations)
+- [ ] ~~Bug fix: fix flicker after state transition to running. (Hallucinations)~~
 - [ ] Improve graphics. (Luka)
   - change background.
   - have nice looking `go back` and `trash` buttons.
 - [ ] Add total value above caravans. (Luka)
 - [ ] Implement win/lose animations. (Pece)
-  - implement a function which check when a player wins.
+  - ~~implement a function which check when a player wins.~~
     - the winning conditions of caravan are as follows:
       1) all caravans are sold.
       2) winning player has at least 2 winning caravans.
