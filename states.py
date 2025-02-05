@@ -1,6 +1,6 @@
 import numpy as np
 import pygame
-from pygame.locals import QUIT, MOUSEBUTTONUP, KEYUP, K_ESCAPE
+from pygame.locals import QUIT, MOUSEBUTTONUP, KEYUP, K_ESCAPE, K_MINUS, K_PLUS, K_EQUALS
 import graphics
 # from graphics import WINDOW_WIDTH, WINDOW_HEIGHT
 from decks import *
@@ -56,6 +56,8 @@ class TitleScreen(State):
             z_index=3, is_visible=True, is_clickable=False, is_hoverable=False
         )
 
+        self.title_cards_pause = 30
+
         self.animations.append(self.dancing_title_animation())
         self.animations.append(self.dancing_cards_animation())
 
@@ -84,6 +86,12 @@ class TitleScreen(State):
                 play_standard_mode_button.is_clickable = False
                 play_standard_mode_button.is_hovered = False
                 return Running(transition=True)
+
+        for event in pygame.event.get(KEYUP):
+            if event.key == K_EQUALS:
+                self.title_cards_pause = max(5, self.title_cards_pause - 5)
+            elif event.key == K_MINUS:
+                self.title_cards_pause = min(100, self.title_cards_pause + 5)
 
         return self
 
@@ -169,7 +177,7 @@ class TitleScreen(State):
             card.is_hoverable = False
             self.animations.append(self.dancing_card_animation(card, f'dance_card_{card_counter}', trajectory[:], angles[:]))
             card_counter = (card_counter + 1) % 70
-            for i in range(30):
+            for i in range(self.title_cards_pause):
                 yield {'anonymous_button': self.objects['anonymous_button']}
 
     def dancing_card_animation(self, card, name, trajectory, angles):
