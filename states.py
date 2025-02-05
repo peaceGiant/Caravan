@@ -218,13 +218,15 @@ class Running(State):
         # """
         # Handle player victory.
         # """
-        if (win_flag := self.check_winning_condition()) is not None:
-            if win_flag == 1:
-                if len(self.animations) == 1:
-                    self.animations.append(self.win_animation())
-            else:
-                if len(self.animations) == 1:
-                    self.animations.append(self.lose_animation())
+        if (player := self.check_winning_condition()) is not None:
+            if len(self.animations) == 1:
+                self.animations.append(self.win_animation(player))
+            # if win_flag == 1:
+            #     if len(self.animations) == 1:
+            #         self.animations.append(self.win_animation())
+            # else:
+            #     if len(self.animations) == 1:
+            #         self.animations.append(self.lose_animation())
 
         # """
         # Handle scenario if card from player_1_playing_deck is played.
@@ -565,21 +567,47 @@ class Running(State):
         p1_win_count = sum([1 if y > 26 or 26 >= x > y else 0 for x, y in [(c1, o1), (c2, o2), (c3, o3)]])
         return 1 if p1_win_count >= 2 else 2  # Return the number of the player that has more winning caravans
 
-    def win_animation(self):
-        while True:
-            caravans = [self.objects[name] for name in self.caravan_names[:3]]
-            for caravan in caravans:
-                for card in caravan.cards:
-                    card.set_at(*card.center, (card.angle + 4) % 360)
-            yield {name: self.objects[name] for name in self.caravan_names[:3]}
+    # def win_animation(self):
+    #     while True:
+    #         caravans = [self.objects[name] for name in self.caravan_names[:3]]
+    #         for caravan in caravans:
+    #             for card in caravan.cards:
+    #                 card.set_at(*card.center, (card.angle + 4) % 360)
+    #         yield {name: self.objects[name] for name in self.caravan_names[:3]}
 
-    def lose_animation(self):
-        while True:
+    def win_animation(self, player=1):
+        if player == 1:
+            caravans = [self.objects[name] for name in self.caravan_names[:3]]
+        else:
             caravans = [self.objects[name] for name in self.caravan_names[3:]]
-            for caravan in caravans:
-                for card in caravan.cards:
-                    card.set_at(*card.center, (card.angle - 4) % 360)
-            yield {name: self.objects[name] for name in self.caravan_names[3:]}
+        while True:
+            for step, side in [(1, 1), (-1, 1), (1, -1), (-1, -1)]:
+                for t in range(40):
+                    for caravan in caravans:
+                        for i, (face_card, adjacents) in enumerate(caravan.layers):
+                            for card in [face_card, *adjacents]:
+                                parity = 1 if i % 2 == 0 else -1
+                                card.set_at(
+                                    card.center[0] + parity * step * side,
+                                    card.center[1] + step,
+                                    (card.angle - parity * step * side) % 360
+                                )
+                    yield {name: self.objects[name] for name in self.caravan_names[:3]}
+            # for t in range(40):
+            #     for caravan in caravans:
+            #         for i, (face_card, adjacents) in enumerate(caravan.layers):
+            #             for card in [face_card, *adjacents]:
+            #                 parity = 1 if i % 2 == 0 else -1
+            #                 card.set_at(card.center[0] - parity, card.center[1] - 1, (card.angle + 2 * parity) % 360)
+            #     yield {name: self.objects[name] for name in self.caravan_names[:3]}
+
+    # def lose_animation(self):
+    #     while True:
+    #         caravans = [self.objects[name] for name in self.caravan_names[3:]]
+    #         for caravan in caravans:
+    #             for card in caravan.cards:
+    #                 card.set_at(*card.center, (card.angle - 4) % 360)
+    #         yield {name: self.objects[name] for name in self.caravan_names[3:]}
 
 
 class Quit(State):
