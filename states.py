@@ -89,7 +89,7 @@ class TitleScreen(State):
 
         for event in pygame.event.get(KEYUP):
             if event.key == K_EQUALS:
-                self.title_cards_pause = max(5, self.title_cards_pause - 5)
+                self.title_cards_pause = max(10, self.title_cards_pause - 5)
             elif event.key == K_MINUS:
                 self.title_cards_pause = min(100, self.title_cards_pause + 5)
 
