@@ -1,3 +1,4 @@
+import numpy as np
 import pygame
 from pygame.locals import QUIT, MOUSEBUTTONUP, KEYUP, K_ESCAPE
 import graphics
@@ -37,6 +38,8 @@ class TitleScreen(State):
     def __init__(self, objects=None, animations=None, transition=False):
         super().__init__(objects, animations, transition)
 
+        self.objects['anonymous_button'] = Button(0, 0, 0, 0, is_visible=False)
+
         self.objects['play_button'] = Button(
             0, 0, WINDOW_WIDTH // 4, WINDOW_HEIGHT // 4, WINDOW_WIDTH // 2, WINDOW_HEIGHT // 3, 'Play',
             z_index=5
@@ -54,6 +57,7 @@ class TitleScreen(State):
         )
 
         self.animations.append(self.dancing_title_animation())
+        self.animations.append(self.dancing_cards_animation())
 
     def handle_events(self):
         if _check_for_quit():
@@ -136,6 +140,42 @@ class TitleScreen(State):
                 offset = 1 if i % 8 == 0 else 0
                 title_text.update(center=(title_text.center[0], title_text.center[1] - offset))
                 yield {'title_text': title_text}
+
+    def dancing_cards_animation(self):
+        def x1_t(t):
+            return t / 2 * abs(np.sin(4 * np.pi * t) + 2)
+        def x2_t(t):
+            return (t - 1) / 2 * abs(np.sin(-4 * np.pi * (t - 1)) + 2) + 1
+        def y_t(t):
+            return 1 - (np.cos(2 * np.pi * t) + 1) / 2
+        offset_y = WINDOW_HEIGHT - 128
+        trajectory = (
+            [(x, 64) for x in np.linspace(-120, 0, 60)] +
+            [(x1_t(t) * WINDOW_WIDTH, y_t(t) * offset_y + 64) for t in np.linspace(0, 0.5, 250)] +
+            [(x2_t(t) * WINDOW_WIDTH, y_t(t) * offset_y + 64) for t in np.linspace(0.5, 1, 250)] +
+            [(WINDOW_WIDTH + x, 64) for x in np.linspace(0, 120, 60)]
+        )
+        angles = (
+            [0] * 60 +
+            list(np.linspace(0, -50, 125)) +
+            list(np.linspace(-50, 50, 250)) +
+            list(np.linspace(50, 0, 125)) +
+            [0] * 60
+        )
+        card_counter = 0
+        while True:
+            card = generate_random_cards(1)[0]
+            card.is_flipped = True
+            card.is_hoverable = False
+            self.animations.append(self.dancing_card_animation(card, f'dance_card_{card_counter}', trajectory[:], angles[:]))
+            card_counter = (card_counter + 1) % 70
+            for i in range(30):
+                yield {'anonymous_button': self.objects['anonymous_button']}
+
+    def dancing_card_animation(self, card, name, trajectory, angles):
+        for (x, y), angle in zip(trajectory, angles):
+            card.set_at(x, y, int(angle))
+            yield {name: card}
 
 
 class Running(State):
