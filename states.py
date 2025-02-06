@@ -40,21 +40,47 @@ class TitleScreen(State):
 
         self.objects['anonymous_button'] = Button(0, 0, 0, 0, is_visible=False)
 
-        self.objects['play_button'] = Button(
-            0, 0, WINDOW_WIDTH // 4, WINDOW_HEIGHT // 4, WINDOW_WIDTH // 2, WINDOW_HEIGHT // 3, 'Play',
-            z_index=5
-        )
-        self.objects['play_button'].in_neutral = True
-
         self.objects['play_standard_mode_button'] = Button(
-            0, 0, WINDOW_WIDTH // 4, WINDOW_HEIGHT // 4, WINDOW_WIDTH // 2, WINDOW_HEIGHT // 3, 'Standard Mode',
-            z_index=3, is_visible=False, is_clickable=False
+            0, 0, WINDOW_WIDTH // 4, WINDOW_HEIGHT // 6, WINDOW_WIDTH // 2, WINDOW_HEIGHT // 3 - 20, 'Standard Mode',
+            z_index=3, is_visible=True, is_clickable=True
         )
 
-        self.objects['title_text'] = Button(
-            0, 0, WINDOW_WIDTH // 2, WINDOW_HEIGHT // 8, WINDOW_WIDTH // 2, WINDOW_HEIGHT // 8, 'Caravan',
-            z_index=3, is_visible=True, is_clickable=False, is_hoverable=False
+        self.objects['play_pvp_mode_button'] = Button(
+            0, 0, WINDOW_WIDTH // 4, WINDOW_HEIGHT // 6, WINDOW_WIDTH // 2,  WINDOW_HEIGHT // 3 + WINDOW_HEIGHT // 6, 'PvP Mode',
+            z_index=3, is_visible=True, is_clickable=True
         )
+
+        self.objects['exit_button'] = Button(
+            0, 0, WINDOW_WIDTH // 4, WINDOW_HEIGHT // 6, WINDOW_WIDTH // 2,  2 * WINDOW_HEIGHT // 3 + 20 , 'Exit',
+            z_index=3, is_visible=True, is_clickable=True
+        )
+
+        # self.objects['title_text'] = Button(
+        #     0, 0, WINDOW_WIDTH // 2, WINDOW_HEIGHT // 8, WINDOW_WIDTH // 2, WINDOW_HEIGHT // 3 - 150, 'Caravan',
+        #     z_index=3, is_visible=True, is_clickable=False, is_hoverable=False, color=(0, 0, 0, 0), font_color=(255, 0, 0)
+        # )
+
+        title_images = [
+            pygame.image.load('assets/texts/C.png'),
+            pygame.image.load('assets/texts/A.png'),
+            pygame.image.load('assets/texts/R.png'),
+            pygame.image.load('assets/texts/A.png'),
+            pygame.image.load('assets/texts/V.png'),
+            pygame.image.load('assets/texts/A.png'),
+            pygame.image.load('assets/texts/N.png'),
+        ]
+
+        self.title_names = [
+            f'title_text_{i + 1}' for i in range(7)
+        ]
+
+        self.title_text = []
+        for i in range(7):
+            self.objects[f'title_text_{i + 1}'] = Button(
+                0, 0, 41, 79, WINDOW_WIDTH // 2 - 49 * 3 + 49 * i, 50, z_index=1000, is_visible=True, 
+                is_clickable=False, is_hoverable=False, original_image=title_images[i]
+            )
+            self.title_text.append(self.objects[f'title_text_{i + 1}'])
 
         self.title_cards_pause = 30
 
@@ -71,21 +97,12 @@ class TitleScreen(State):
 
         for event in pygame.event.get(MOUSEBUTTONUP):
             x, y = event.pos
-            play_button = self.objects['play_button']
-            if play_button.is_clickable and play_button.rect.collidepoint(x, y):
-                play_button.is_clickable = False
-                if play_button.in_neutral:
-                    play_button.in_neutral = False
-                    self.animations.append(self.get_play_button_neutral_to_active_animation())
-                else:
-                    play_button.in_neutral = True
-                    self.animations.append(self.get_play_button_active_to_neutral_animation())
-
-            play_standard_mode_button = self.objects['play_standard_mode_button']
-            if play_standard_mode_button.is_clickable and play_standard_mode_button.rect.collidepoint(x, y):
-                play_standard_mode_button.is_clickable = False
-                play_standard_mode_button.is_hovered = False
+            if self.objects['play_standard_mode_button'].rect.collidepoint(x, y):
                 return Running(transition=True)
+            elif self.objects['play_pvp_mode_button'].rect.collidepoint(x, y):
+                return Pvp(transition=True)
+            elif self.objects['exit_button'].rect.collidepoint(x, y):
+                return Quit()
 
         for event in pygame.event.get(KEYUP):
             if event.key == K_EQUALS:
@@ -137,17 +154,26 @@ class TitleScreen(State):
         self.objects['play_standard_mode_button'].is_visible = False
 
     def dancing_title_animation(self):
+        trajectory = [65 + np.sin(t) * 20 for t in np.linspace(0, 2 * np.pi, 160)]
+        offset = 5
+        
+        step = 0
         while True:
-            for i in range(80):
-                title_text = self.objects['title_text']
-                offset = 1 if i % 8 == 0 else 0
-                title_text.update(scale=(0, 0), center=(title_text.center[0], title_text.center[1] + offset))
-                yield {'title_text': title_text}
-            for i in range(80):
-                title_text = self.objects['title_text']
-                offset = 1 if i % 8 == 0 else 0
-                title_text.update(center=(title_text.center[0], title_text.center[1] - offset))
-                yield {'title_text': title_text}
+            for i, title_letter in enumerate(self.title_text):
+                title_letter.update(center=(title_letter.center[0], trajectory[(step + offset * i) % 160]))
+            yield {name: letter for name, letter in zip(self.title_names, self.title_text)}
+            step = (step + 1) % 160
+            
+            # for i in range(80):
+            #     title_text = self.objects['title_text']
+            #     offset = 1 if i % 8 == 0 else 0
+            #     title_text.update(scale=(0, 0), center=(title_text.center[0], title_text.center[1] + offset))
+            #     yield {'title_text': title_text}
+            # for i in range(80):
+            #     title_text = self.objects['title_text']
+            #     offset = 1 if i % 8 == 0 else 0
+            #     title_text.update(center=(title_text.center[0], title_text.center[1] - offset))
+            #     yield {'title_text': title_text}
 
     def dancing_cards_animation(self):
         def x1_t(t):
@@ -183,7 +209,7 @@ class TitleScreen(State):
     def dancing_card_animation(self, card, name, trajectory, angles):
         for (x, y), angle in zip(trajectory, angles):
             card.set_at(x, y, int(angle))
-            yield {name: card}
+            yield {name: card} 
 
 
 class Running(State):
@@ -205,6 +231,34 @@ class Running(State):
             'player_2_caravan_A',
             'player_2_caravan_B',
             'player_2_caravan_C'
+        ]
+
+        COUNTER_COLOR = (200, 200, 200)
+        self.objects['counter_1_caravan_A'] = Button(
+            0, 0, 1, 1, 200, 218, '0', is_clickable=False, z_index=500, is_hoverable=False, font_color=COUNTER_COLOR, color=(0, 0, 0, 0)
+        )
+        self.objects['counter_1_caravan_B'] = Button(
+            0, 0, 1, 1, 400, 218, '0', is_clickable=False, z_index=500, is_hoverable=False, font_color=COUNTER_COLOR, color=(0, 0, 0, 0)
+        )
+        self.objects['counter_1_caravan_C'] = Button(
+            0, 0, 1, 1, 600, 218, '0', is_clickable=False, z_index=500, is_hoverable=False, font_color=COUNTER_COLOR, color=(0, 0, 0, 0)
+        )
+        self.objects['counter_2_caravan_A'] = Button(
+            0, 0, 1, 1, 100, 18, '0', is_clickable=False, z_index=500, is_hoverable=False, font_color=COUNTER_COLOR, color=(0, 0, 0, 0)
+        )
+        self.objects['counter_2_caravan_B'] = Button(
+            0, 0, 1, 1, 300, 18, '0', is_clickable=False, z_index=500, is_hoverable=False, font_color=COUNTER_COLOR, color=(0, 0, 0, 0)
+        )
+        self.objects['counter_2_caravan_C'] = Button(
+            0, 0, 1, 1, 500, 18, '0', is_clickable=False, z_index=500, is_hoverable=False, font_color=COUNTER_COLOR, color=(0, 0, 0, 0)
+        )
+        self.counter_names = [
+            'counter_1_caravan_A',
+            'counter_1_caravan_B',
+            'counter_1_caravan_C',
+            'counter_2_caravan_A',
+            'counter_2_caravan_B',
+            'counter_2_caravan_C',
         ]
 
         self.objects['go_back_button'] = Button(10, WINDOW_HEIGHT - 50, 80, 40, text='Go back')
@@ -239,6 +293,12 @@ class Running(State):
         # print(str([(card.z_index, str(card)) for name in self.caravan_names[:3] for card in self.objects[name].cards]))
         # print(str([(card.z_index, str(card)) for name in self.caravan_names[:3] for card, _ in self.objects[name].layers]))
         # print(len(self.objects.keys()), self.objects.keys())
+
+        # """
+        # Update caravan counters.
+        # """
+        for counter_name, caravan_name in zip(self.counter_names, self.caravan_names):
+            self.objects[counter_name].text = f'{self.objects[caravan_name].calculate_value()}'
 
         # """
         # Handle mouse hovering over objects.
@@ -624,6 +684,7 @@ class Running(State):
     #         yield {name: self.objects[name] for name in self.caravan_names[:3]}
 
     def win_animation(self, player=1):
+        self.animations.append(self.dancing_counter_animation(player))
         if player == 1:
             caravans = [self.objects[name] for name in self.caravan_names[:3]]
         else:
@@ -641,21 +702,36 @@ class Running(State):
                                     (card.angle - parity * step * side) % 360
                                 )
                     yield {name: self.objects[name] for name in self.caravan_names[:3]}
-            # for t in range(40):
-            #     for caravan in caravans:
-            #         for i, (face_card, adjacents) in enumerate(caravan.layers):
-            #             for card in [face_card, *adjacents]:
-            #                 parity = 1 if i % 2 == 0 else -1
-            #                 card.set_at(card.center[0] - parity, card.center[1] - 1, (card.angle + 2 * parity) % 360)
-            #     yield {name: self.objects[name] for name in self.caravan_names[:3]}
+    
+    def dancing_counter_animation(self, player=1):
+        if player == 1:
+            counters = [self.objects[name] for name in self.counter_names[:3]]
+            counter_names = self.counter_names[:3]
+        else:
+            counters = [self.objects[name] for name in self.counter_names[3:]]
+            counter_names = self.counter_names[3:]
 
-    # def lose_animation(self):
-    #     while True:
-    #         caravans = [self.objects[name] for name in self.caravan_names[3:]]
-    #         for caravan in caravans:
-    #             for card in caravan.cards:
-    #                 card.set_at(*card.center, (card.angle - 4) % 360)
-    #         yield {name: self.objects[name] for name in self.caravan_names[3:]}
+        while True:
+            for ts in [range(0, 256, 2), range(255, -1, -2)]:
+                for t in ts:
+                    for counter in counters:
+                        counter.font_color = (t, t, t)
+                    yield {name: counter for name, counter in zip(counter_names, counters)}
+            # for t in range(40):
+            #     parity = -1 if t % 2 == 0 else 1
+            #     for counter in counters:
+            #         counter.update(center=(counter.center[0] - 1, counter.center[1]))
+            #     yield {counter_name: counter for counter_name, counter in zip(self.counter_names, counters)}
+            # for t in range(80):
+            #     parity = -1 if t % 2 == 0 else 1
+            #     for counter in counters:
+            #         counter.update(center=(counter.center[0] + 1, counter.center[1]))
+            #     yield {counter_name: counter for counter_name, counter in zip(self.counter_names, counters)}
+            # for t in range(40):
+            #     parity = -1 if t % 2 == 0 else 1
+            #     for counter in counters:
+            #         counter.update(center=(counter.center[0] - 1, counter.center[1]))
+            #     yield {counter_name: counter for counter_name, counter in zip(self.counter_names, counters)}
 
 
 class Quit(State):
@@ -681,19 +757,32 @@ def _check_for_quit():
 
 class Button:
     def __init__(self, left, top, width, height, center_x=None, center_y=None, text='', is_clickable=True,
-                 is_hovered=False, is_visible=True, z_index=0, is_hoverable=True):
-        self.original_image = pygame.Surface((width, height)).convert_alpha()
-        self.original_image.fill((255, 255, 255, 255))
-        self.image = pygame.Surface((width, height)).convert_alpha()
-        self.image.fill((255, 255, 255, 255))
+                 is_hovered=False, is_visible=True, z_index=0, is_hoverable=True, font_size=40, font_color=(0, 0, 0), color=(255, 255, 255, 255),
+                 original_image=None):
+        # self.original_image = pygame.Surface((width, height)).convert_alpha()
+        # self.original_image.fill(color)
+        # self.image = pygame.Surface((width, height)).convert_alpha()
+        # self.image.fill(color)
+        if original_image:
+            self.original_image = original_image
+            self.image = original_image.copy()
+        else:
+            self.original_image = pygame.transform.scale(pygame.image.load('assets/backgrounds/button.png'), (width, height)).convert_alpha()
+            self.image = pygame.transform.scale(pygame.image.load('assets/backgrounds/button.png'), (width, height)).convert_alpha()
+
         self.rect = pygame.Rect(left, top, width, height)
         if center_x and center_y:
             self.rect.center = (center_x, center_y)
         self.center = self.rect.center
         self.text = text
+        self.font_size = font_size
+        self.font_color = font_color
+        self.default_font_color = font_color
 
-        self.hovered_image = pygame.Surface((width + 10, height + 10)).convert_alpha()
-        self.hovered_image.fill((255, 255, 0, 255))
+        # self.hovered_image = pygame.Surface((width + 10, height + 10)).convert_alpha()
+        # self.hovered_image.fill((255, 255, 0, 255))
+
+        self.hovered_image = self.image.copy()
 
         self.is_clickable = is_clickable
         self.is_hoverable = is_hoverable
@@ -730,9 +819,11 @@ class Button:
     def hover(self, x, y):
         if self.rect.collidepoint(x, y) and self.is_hoverable:
             self.is_hovered = True
+            self.font_color = (255, 255, 255)
         else:
             self.is_hovered = False
             self.is_selected = False
+            self.font_color = self.default_font_color
 
     def click(self, x, y):
         if self.rect.collidepoint(x, y):

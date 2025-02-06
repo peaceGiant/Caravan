@@ -12,6 +12,10 @@ WINDOW_FLAGS = pygame.RESIZABLE | 0
 
 # Colors
 BG_COLOR = (255, 150, 0)
+TEXT_COLOR = (0, 0, 0)
+
+BACKGROUND_IMAGE = pygame.transform.scale(pygame.image.load('assets/backgrounds/background.png'), (WINDOW_WIDTH, WINDOW_HEIGHT))
+BUTTON_IMAGE = pygame.image.load('assets/backgrounds/button.png')
 
 clock = pygame.time.Clock()
 FPS = 80
@@ -48,9 +52,10 @@ def display(state):
     global display_surf
     old_surface = display_surf.copy()
 
-    display_surf.fill(BG_COLOR)
+    # display_surf.fill(BG_COLOR)
+    display_surf.blit(BACKGROUND_IMAGE, BACKGROUND_IMAGE.get_rect())
 
-    font = pygame.font.Font(None, size=50)
+    font = pygame.font.Font('assets/fonts/THE_FONT.ttf', size=26)
     # surf = font.render(f'{state}', True, (255, 0, 255), (40, 40, 40))
     # display_surf.blit(surf, (20, 20))
 
@@ -74,7 +79,7 @@ def display(state):
 
         display_surf.blit(object.get_image(), object.rect)
 
-        text_surf = font.render(object.text, True, (255, 0, 0)).convert_alpha()
+        text_surf = font.render(object.text, True, object.font_color).convert_alpha()
         rect = text_surf.get_rect()
         rect.center = object.rect.center
         display_surf.blit(text_surf, rect)
@@ -88,7 +93,7 @@ def display(state):
         display_surf.blit(selected_image, selected_image_rect)
         display_surf.blit(image, image_rect)
 
-        text_surf = font.render(currently_selected.text, True, (255, 0, 0)).convert_alpha()
+        text_surf = font.render(currently_selected.text, True, currently_selected.font_color).convert_alpha()
         rect = text_surf.get_rect()
         rect.center = image_rect.center
         display_surf.blit(text_surf, rect)
@@ -98,7 +103,7 @@ def display(state):
         display_surf.blit(hovered_image, hovered_image_rect)
         display_surf.blit(image, image_rect)
 
-        text_surf = font.render(currently_hovered.text, True, (255, 0, 0)).convert_alpha()
+        text_surf = font.render(currently_hovered.text, True, currently_hovered.font_color).convert_alpha()
         rect = text_surf.get_rect()
         rect.center = image_rect.center
         display_surf.blit(text_surf, rect)
@@ -154,9 +159,9 @@ def display_transition_animation(old_surface, new_surface):
                     index = (t - 30 * box) % 90
                 boxx = box_width // 2 + box * box_width
                 box_coords = [(boxx + x, y) for x, y in coords[index]]
-                pygame.draw.polygon(display_surf, (255, 100, 255), box_coords)
+                pygame.draw.polygon(display_surf, (128, 0, 0), box_coords)
             pygame.display.update()
-            clock.tick(FPS * 8.2)
+            clock.tick(FPS * 6)
         if ts != range(60 + WINDOW_WIDTH // box_width * 30, -1, -1):
             pygame.mixer.music.play(loops=-1)
         pygame.time.wait(200)

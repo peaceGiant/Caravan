@@ -81,6 +81,7 @@ class Card:
         self.is_flipping = False
         self.z_index = 10
         self.text = ''
+        self.font_color = (0, 0, 0, 0)
 
     def is_numerical(self):
         return RANK_A <= self.rank <= RANK_10
