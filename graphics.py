@@ -17,12 +17,15 @@ TEXT_COLOR = (0, 0, 0)
 BACKGROUND_IMAGE = pygame.transform.scale(pygame.image.load('assets/backgrounds/background.png'), (WINDOW_WIDTH, WINDOW_HEIGHT))
 BUTTON_IMAGE = pygame.image.load('assets/backgrounds/button.png')
 
+player_1_turn_sound = ...
+player_2_turn_sound = ...
+
 clock = pygame.time.Clock()
 FPS = 80
 
 
 def init():
-    global display_surf
+    global display_surf, player_1_turn_sound, player_2_turn_sound
     display_surf = pygame.display.set_mode(
         size=(WINDOW_WIDTH, WINDOW_HEIGHT),
         flags=WINDOW_FLAGS
@@ -33,6 +36,12 @@ def init():
     pygame.mixer.init()
     pygame.mixer.music.load('assets/music/Smash Sketch.mp3')
     pygame.mixer.music.play(loops=-1)
+    pygame.mixer.music.set_volume(0.1)
+
+    player_1_turn_sound = pygame.mixer.Sound('assets/audio/player_1_turn.mp3')
+    player_2_turn_sound = pygame.mixer.Sound('assets/audio/player_2_turn.mp3')
+    player_1_turn_sound.set_volume(1)
+    player_2_turn_sound.set_volume(1)
 
 
 def handle_events():
@@ -115,7 +124,7 @@ def display(state):
         pygame.mixer.music.fadeout(100)
         if 'TitleScreen' in str(type(state)):
             pygame.mixer.music.load('assets/music/Smash Sketch.mp3')
-        elif 'Running' in str(type(state)):
+        elif 'Mode' in str(type(state)):
             pygame.mixer.music.load('assets/music/Thief in the Night.mp3')
         display_transition_animation(old_surface, new_surface)
         return

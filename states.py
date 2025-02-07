@@ -1299,6 +1299,8 @@ class PvPMode(State):
                 self.wait_animation(.6),
                 self.respace_player_hand_animation(player_1_playing_deck),
                 self.wait_animation(.2),
+                self.announce_end_of_turn_sound_animation(player),
+                self.wait_animation(.6),
                 self.flip_over_deck_animation(player_2_playing_deck),
                 self.wait_animation(.6),
                 self.respace_player_hand_animation(player_2_playing_deck, player=2),
@@ -1310,11 +1312,20 @@ class PvPMode(State):
                 self.wait_animation(.6),
                 self.respace_player_hand_animation(player_2_playing_deck, player=2),
                 self.wait_animation(.2),
+                self.announce_end_of_turn_sound_animation(player),
+                self.wait_animation(.6),
                 self.flip_over_deck_animation(player_1_playing_deck),
                 self.wait_animation(.6),
                 self.respace_player_hand_animation(player_1_playing_deck),
                 self.wait_animation(.2)
             )
+
+    def announce_end_of_turn_sound_animation(self, player):
+        if player == 1:
+            graphics.player_2_turn_sound.play()
+        else:
+            graphics.player_1_turn_sound.play()
+        yield {'anonymous_button': self.objects['anonymous_button']}
 
 
 class Quit(State):
