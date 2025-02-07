@@ -261,8 +261,13 @@ class Running(State):
             'counter_2_caravan_C',
         ]
 
-        self.objects['go_back_button'] = Button(10, WINDOW_HEIGHT - 50, 80, 40, text='Go back')
-        self.objects['trash_button'] = Button(WINDOW_WIDTH - 50, WINDOW_HEIGHT - 50, 40, 40, text='trash')
+        self.objects['go_back_button'] = Button(10, WINDOW_HEIGHT - 69, 128, 64, text='Go back')
+
+        closed_trash_image = pygame.transform.scale(pygame.image.load('assets/backgrounds/actual_trash.png'), (96, 96))
+        opened_trash_image = pygame.transform.scale(pygame.image.load('assets/backgrounds/actual_trash_open.png'), (96, 96))       
+        self.objects['trash_button'] = Trash(
+            WINDOW_WIDTH - 96, WINDOW_HEIGHT - 96, 96, 96, original_image=closed_trash_image, hovered_image=opened_trash_image
+            )
 
         hand_cards, draw_cards = generate_valid_player_and_drawing_deck()
 
@@ -758,7 +763,7 @@ def _check_for_quit():
 class Button:
     def __init__(self, left, top, width, height, center_x=None, center_y=None, text='', is_clickable=True,
                  is_hovered=False, is_visible=True, z_index=0, is_hoverable=True, font_size=40, font_color=(0, 0, 0), color=(255, 255, 255, 255),
-                 original_image=None):
+                 original_image=None, hovered_image=None):
         # self.original_image = pygame.Surface((width, height)).convert_alpha()
         # self.original_image.fill(color)
         # self.image = pygame.Surface((width, height)).convert_alpha()
@@ -781,8 +786,10 @@ class Button:
 
         # self.hovered_image = pygame.Surface((width + 10, height + 10)).convert_alpha()
         # self.hovered_image.fill((255, 255, 0, 255))
-
-        self.hovered_image = self.image.copy()
+        if hovered_image:
+            self.hovered_image = hovered_image
+        else:
+            self.hovered_image = self.image.copy()
 
         self.is_clickable = is_clickable
         self.is_hoverable = is_hoverable
@@ -845,3 +852,23 @@ class Button:
 
     def get_selected(self):
         return self
+
+
+class Trash(Button):
+
+    def get_hovered_params(self):
+        hovered_image_rect = self.hovered_image.get_rect()
+        hovered_image_rect.center = self.rect.center
+
+        return self.hovered_image, hovered_image_rect, self.hovered_image, hovered_image_rect, self.text
+
+    def hover(self, x, y):
+        if self.rect.collidepoint(x, y) and self.is_hoverable:
+            self.is_hovered = True
+            self.font_color = (255, 255, 255)
+            self.image = self.hovered_image
+        else:
+            self.is_hovered = False
+            self.is_selected = False
+            self.font_color = self.default_font_color
+            self.image = self.original_image
