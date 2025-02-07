@@ -162,7 +162,7 @@ class TitleScreen(State):
             for i, title_letter in enumerate(self.title_text):
                 title_letter.update(center=(title_letter.center[0], trajectory[(step + offset * i) % 160]))
             yield {name: letter for name, letter in zip(self.title_names, self.title_text)}
-            step = (step + 1) % 160
+            step = (step - 1) % 160
             
             # for i in range(80):
             #     title_text = self.objects['title_text']

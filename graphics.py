@@ -8,7 +8,7 @@ display_surf = ...
 
 # Window constants
 WINDOW_WIDTH, WINDOW_HEIGHT = 1000, 600
-WINDOW_FLAGS = pygame.RESIZABLE | 0
+WINDOW_FLAGS = pygame.RESIZABLE | pygame.DOUBLEBUF | 0
 
 # Colors
 BG_COLOR = (255, 150, 0)
