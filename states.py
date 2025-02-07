@@ -353,12 +353,12 @@ class StandardMode(State):
         if (player := self.check_winning_condition()) is not None:
             if len(self.animations) == 1:
                 self.animations.append(self.win_animation(player))
-            # if win_flag == 1:
-            #     if len(self.animations) == 1:
-            #         self.animations.append(self.win_animation())
-            # else:
-            #     if len(self.animations) == 1:
-            #         self.animations.append(self.lose_animation())
+                if self.audible:
+                    pygame.mixer.music.fadeout(50)
+                    pygame.mixer.music.load('assets/music/Ouroboros.mp3')
+                    pygame.mixer.music.set_volume(.3)
+                    pygame.mixer.music.play()
+
 
         # """
         # Handle scenario if card from player_1_playing_deck is played.
@@ -709,6 +709,7 @@ class StandardMode(State):
 
     def win_animation(self, player=1):
         self.animations.append(self.dancing_counter_animation(player))
+        self.animations.append(self.winning_fireworks_animation())
         if player == 1:
             caravans = [self.objects[name] for name in self.caravan_names[:3]]
         else:
@@ -741,21 +742,36 @@ class StandardMode(State):
                     for counter in counters:
                         counter.font_color = (t, t, t)
                     yield {name: counter for name, counter in zip(counter_names, counters)}
-            # for t in range(40):
-            #     parity = -1 if t % 2 == 0 else 1
-            #     for counter in counters:
-            #         counter.update(center=(counter.center[0] - 1, counter.center[1]))
-            #     yield {counter_name: counter for counter_name, counter in zip(self.counter_names, counters)}
-            # for t in range(80):
-            #     parity = -1 if t % 2 == 0 else 1
-            #     for counter in counters:
-            #         counter.update(center=(counter.center[0] + 1, counter.center[1]))
-            #     yield {counter_name: counter for counter_name, counter in zip(self.counter_names, counters)}
-            # for t in range(40):
-            #     parity = -1 if t % 2 == 0 else 1
-            #     for counter in counters:
-            #         counter.update(center=(counter.center[0] - 1, counter.center[1]))
-            #     yield {counter_name: counter for counter_name, counter in zip(self.counter_names, counters)}
+
+    def winning_fireworks_animation(self):
+        fireworks = 0
+        while fireworks <= 150:
+            self.animations.append(self.single_firework_animation())
+            for i in range(random.randint(5, 40)):
+                yield {'anonymous_button': self.objects['anonymous_button']}
+            fireworks += 1
+
+    def single_firework_animation(self):
+        color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+        x_pos = random.randint(50, WINDOW_WIDTH - 50)
+        height = random.randint(50, WINDOW_HEIGHT - 50)
+        travel_time = random.randint(20, 60)
+        size = random.randint(8, 16)
+        max_radius = random.randint(30, 100)
+
+        trajectory = [(WINDOW_HEIGHT - height + 6) * ((t - 1) ** 2) + height for t in np.linspace(0, 1, travel_time)]
+        for t in trajectory:
+            pygame.draw.rect(graphics.display_surf, color, (x_pos, t, size, size))
+            yield {'anonymous_button': self.objects['anonymous_button']}
+
+        radius_trajectory = [max_radius * t ** (1/6) for t in np.linspace(0, 1, 40)]
+        for r in radius_trajectory:
+            pygame.draw.circle(graphics.display_surf, color, (x_pos + 8, trajectory[-1]), r)
+            yield {'anonymous_button': self.objects['anonymous_button']}
+
+        for i in range(1, 8):
+            pygame.draw.circle(graphics.display_surf, color, (x_pos + 8, trajectory[-1]), max_radius / i)
+            yield {'anonymous_button': self.objects['anonymous_button']}
 
 
 class PvPMode(State):
@@ -874,6 +890,11 @@ class PvPMode(State):
         if (player := self.check_winning_condition()) is not None:
             if len(self.animations) == 1:
                 self.animations.append(self.win_animation(player))
+                if self.audible:
+                    pygame.mixer.music.fadeout(50)
+                    pygame.mixer.music.load('assets/music/Ouroboros.mp3')
+                    pygame.mixer.music.set_volume(.3)
+                    pygame.mixer.music.play()
 
         # """
         # Handle scenario if card from player_1_playing_deck is played.
@@ -1273,6 +1294,7 @@ class PvPMode(State):
 
     def win_animation(self, player=1):
         self.animations.append(self.dancing_counter_animation(player))
+        self.animations.append(self.winning_fireworks_animation())
         if player == 1:
             caravans = [self.objects[name] for name in self.caravan_names[:3]]
         else:
@@ -1335,12 +1357,35 @@ class PvPMode(State):
                 self.wait_animation(.2)
             )
 
-    def announce_end_of_turn_sound_animation(self, player):
-        if player == 1:
-            graphics.player_2_turn_sound.play()
-        else:
-            graphics.player_1_turn_sound.play()
-        yield {'anonymous_button': self.objects['anonymous_button']}
+    def winning_fireworks_animation(self):
+        fireworks = 0
+        while fireworks <= 150:
+            self.animations.append(self.single_firework_animation())
+            for i in range(random.randint(5, 40)):
+                yield {'anonymous_button': self.objects['anonymous_button']}
+            fireworks += 1
+
+    def single_firework_animation(self):
+        color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+        x_pos = random.randint(50, WINDOW_WIDTH - 50)
+        height = random.randint(50, WINDOW_HEIGHT - 50)
+        travel_time = random.randint(20, 60)
+        size = random.randint(8, 16)
+        max_radius = random.randint(30, 100)
+
+        trajectory = [(WINDOW_HEIGHT - height + 6) * ((t - 1) ** 2) + height for t in np.linspace(0, 1, travel_time)]
+        for t in trajectory:
+            pygame.draw.rect(graphics.display_surf, color, (x_pos, t, size, size))
+            yield {'anonymous_button': self.objects['anonymous_button']}
+
+        radius_trajectory = [max_radius * t ** (1/6) for t in np.linspace(0, 1, 40)]
+        for r in radius_trajectory:
+            pygame.draw.circle(graphics.display_surf, color, (x_pos + 8, trajectory[-1]), r)
+            yield {'anonymous_button': self.objects['anonymous_button']}
+
+        for i in range(1, 8):
+            pygame.draw.circle(graphics.display_surf, color, (x_pos + 8, trajectory[-1]), max_radius / i)
+            yield {'anonymous_button': self.objects['anonymous_button']}
 
 
 class Quit(State):
