@@ -22,10 +22,11 @@ class Context:
 
 
 class State:
-    def __init__(self, objects=None, animations=None, transition=False):
+    def __init__(self, objects=None, animations=None, transition=False, audible=True):
         self.objects: dict[str, Button | Card | Deck | Caravan] = objects if objects else {}
         self.animations: list = animations if animations else []
         self.transition = transition
+        self.audible = audible
 
     def handle_events(self):
         return self
@@ -35,8 +36,8 @@ class State:
 
 
 class TitleScreen(State):
-    def __init__(self, objects=None, animations=None, transition=False):
-        super().__init__(objects, animations, transition)
+    def __init__(self, objects=None, animations=None, transition=False, audible=True):
+        super().__init__(objects, animations, transition, audible)
 
         self.objects['anonymous_button'] = Button(0, 0, 0, 0, is_visible=False)
 
@@ -53,6 +54,14 @@ class TitleScreen(State):
         self.objects['exit_button'] = Button(
             0, 0, WINDOW_WIDTH // 4, WINDOW_HEIGHT // 6, WINDOW_WIDTH // 2,  2 * WINDOW_HEIGHT // 3 + 20 , 'Exit',
             z_index=3, is_visible=True, is_clickable=True
+        )
+
+        self.objects['aux_button'] = Button(
+            10, WINDOW_HEIGHT - 69, 64, 64, is_clickable=False, is_hoverable=False, z_index=-10
+        )
+
+        self.objects['mute_button'] = Mute(
+            10, WINDOW_HEIGHT - 69, 64, 64, is_neutral=audible, z_index=10
         )
 
         # self.objects['title_text'] = Button(
@@ -98,11 +107,21 @@ class TitleScreen(State):
         for event in pygame.event.get(MOUSEBUTTONUP):
             x, y = event.pos
             if self.objects['play_standard_mode_button'].rect.collidepoint(x, y):
-                return StandardMode(transition=True)
+                return StandardMode(transition=True, audible=self.audible)
             elif self.objects['play_pvp_mode_button'].rect.collidepoint(x, y):
-                return PvPMode(transition=True)
+                return PvPMode(transition=True, audible=self.audible)
             elif self.objects['exit_button'].rect.collidepoint(x, y):
                 return Quit()
+            elif self.objects['mute_button'].rect.collidepoint(x, y):
+                self.objects['mute_button'].is_neutral = not self.objects['mute_button'].is_neutral
+                self.audible = not self.audible
+                if self.audible == False:
+                    pygame.mixer.music.stop() 
+                else:
+                    pygame.mixer.music.load('assets/music/Smash Sketch.mp3')
+                    pygame.mixer.music.set_volume(.1)
+                    pygame.mixer.music.play()
+
 
         for event in pygame.event.get(KEYUP):
             if event.key == K_EQUALS:
@@ -213,8 +232,8 @@ class TitleScreen(State):
 
 
 class StandardMode(State):
-    def __init__(self, objects=None, animations=None, transition=False):
-        super().__init__(objects, animations, transition)
+    def __init__(self, objects=None, animations=None, transition=False, audible=True):
+        super().__init__(objects, animations, transition, audible)
 
         self.objects['anonymous_button'] = Button(0, 0, 0, 0, is_visible=False)
 
@@ -321,7 +340,7 @@ class StandardMode(State):
             x, y = event.pos
 
             if self.objects['go_back_button'].collides_with(x, y):
-                return TitleScreen(transition=True)
+                return TitleScreen(transition=True, audible=self.audible)
 
             for value in self.objects.values():
                 value.click(x, y)
@@ -740,8 +759,8 @@ class StandardMode(State):
 
 
 class PvPMode(State):
-    def __init__(self, objects=None, animations=None, transition=False):
-        super().__init__(objects, animations, transition)
+    def __init__(self, objects=None, animations=None, transition=False, audible=True):
+        super().__init__(objects, animations, transition, audible)
 
         self.objects['anonymous_button'] = Button(0, 0, 0, 0, is_visible=False)
 
@@ -842,7 +861,7 @@ class PvPMode(State):
             x, y = event.pos
 
             if self.objects['go_back_button'].collides_with(x, y):
-                return TitleScreen(transition=True)
+                return TitleScreen(transition=True, audible=self.audible)
 
             for value in self.objects.values():
                 value.click(x, y)
@@ -1457,3 +1476,57 @@ class Trash(Button):
             self.is_selected = False
             self.font_color = self.default_font_color
             self.image = self.original_image
+
+
+class Mute(Button):
+    def __init__(self, left, top, width, height, center_x=None, center_y=None, text='', is_clickable=True, 
+                 is_hovered=False, is_visible=True, z_index=0, is_hoverable=True, is_neutral=True):
+        super().__init__(left, top, width, height, center_x, center_y, text, is_clickable, is_hovered, is_visible, z_index, is_hoverable)
+
+        self.images = {
+            'sound_neutral': pygame.image.load('assets/backgrounds/sound_button_neutral.png'),
+            'sound_neutral_hovered': pygame.image.load('assets/backgrounds/sound_button_hover.png'),
+            'sound_mute': pygame.image.load('assets/backgrounds/sound_muted_button_neutral.png'),
+            'sound_mute_hovered': pygame.image.load('assets/backgrounds/sound_muted_button_hover.png')
+        }
+        # for key, value in self.images.items():
+        #     self.images[key] = pygame.transform.scale(value, (128, 128))
+        self.is_neutral = is_neutral
+
+        self.image = self.images['sound_neutral']
+
+    def click(self, x, y):
+        if self.rect.collidepoint(x, y):
+            self.is_selected = True
+            self.is_pressed = not self.is_pressed
+        else:
+            self.is_selected = False
+
+    def hover(self, x, y):
+        if self.rect.collidepoint(x, y):
+            self.is_hovered = True
+            self.font_color = (255, 255, 255)
+            if self.is_neutral:
+                self.image = self.images['sound_neutral_hovered']
+            else:
+                self.image = self.images['sound_mute_hovered']
+        else:
+            self.is_hovered = False
+            self.is_selected = False
+            self.font_color = self.default_font_color
+            if self.is_neutral:
+                self.image = self.images['sound_neutral']
+            else:
+                self.image = self.images['sound_mute']
+
+    def get_hovered_params(self):
+        hovered_image_rect = self.image.get_rect()
+        hovered_image_rect.center = self.rect.center
+
+        return self.image, hovered_image_rect, self.image, hovered_image_rect, self.text
+    
+    def get_clicked_params(self):
+        hovered_image_rect = self.image.get_rect()
+        hovered_image_rect.center = self.rect.center
+
+        return self.image, hovered_image_rect, self.image, hovered_image_rect, self.text

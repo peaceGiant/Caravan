@@ -121,12 +121,19 @@ def display(state):
 
     if state.transition:
         state.transition = False
-        pygame.mixer.music.fadeout(100)
-        if 'TitleScreen' in str(type(state)):
-            pygame.mixer.music.load('assets/music/Smash Sketch.mp3')
-        elif 'Mode' in str(type(state)):
-            pygame.mixer.music.load('assets/music/Thief in the Night.mp3')
-        display_transition_animation(old_surface, new_surface)
+        if state.audible:
+            pygame.mixer.music.fadeout(100)
+            if 'TitleScreen' in str(type(state)):
+                pygame.mixer.music.load('assets/music/Smash Sketch.mp3')
+                pygame.mixer.music.set_volume(.1)
+            elif 'StandardMode' in str(type(state)):
+                pygame.mixer.music.load('assets/music/Thief in the Night (Standard).mp3')
+                pygame.mixer.music.set_volume(.3)
+            elif 'PvPMode' in str(type(state)):
+                pygame.mixer.music.load('assets/music/Walking Along (PvP).mp3')
+                pygame.mixer.music.set_volume(.7)
+        
+        display_transition_animation(old_surface, new_surface, state.audible)
         return
 
     pygame.display.update()
@@ -141,7 +148,7 @@ def get_visible_objects(objects):
     return sorted(result, key=lambda x: x.z_index)
 
 
-def display_transition_animation(old_surface, new_surface):
+def display_transition_animation(old_surface, new_surface, audible):
     box_width = 50
     coords = []
     for angle_offset in range(0, 91, 1):
@@ -172,7 +179,7 @@ def display_transition_animation(old_surface, new_surface):
             pygame.display.update()
             clock.tick(FPS * 6)
         if ts != range(60 + WINDOW_WIDTH // box_width * 30, -1, -1):
-            pygame.mixer.music.play(loops=-1)
+            if audible:
+                pygame.mixer.music.play(loops=-1)
         pygame.time.wait(200)
-        display_surf.fill(BG_COLOR)
         old_surface = new_surface
