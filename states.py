@@ -64,11 +64,6 @@ class TitleScreen(State):
             10, WINDOW_HEIGHT - 69, 64, 64, is_neutral=audible, z_index=10
         )
 
-        # self.objects['title_text'] = Button(
-        #     0, 0, WINDOW_WIDTH // 2, WINDOW_HEIGHT // 8, WINDOW_WIDTH // 2, WINDOW_HEIGHT // 3 - 150, 'Caravan',
-        #     z_index=3, is_visible=True, is_clickable=False, is_hoverable=False, color=(0, 0, 0, 0), font_color=(255, 0, 0)
-        # )
-
         title_images = [
             pygame.image.load('assets/texts/C.png'),
             pygame.image.load('assets/texts/A.png'),
@@ -182,17 +177,6 @@ class TitleScreen(State):
                 title_letter.update(center=(title_letter.center[0], trajectory[(step + offset * i) % 160]))
             yield {name: letter for name, letter in zip(self.title_names, self.title_text)}
             step = (step - 1) % 160
-            
-            # for i in range(80):
-            #     title_text = self.objects['title_text']
-            #     offset = 1 if i % 8 == 0 else 0
-            #     title_text.update(scale=(0, 0), center=(title_text.center[0], title_text.center[1] + offset))
-            #     yield {'title_text': title_text}
-            # for i in range(80):
-            #     title_text = self.objects['title_text']
-            #     offset = 1 if i % 8 == 0 else 0
-            #     title_text.update(center=(title_text.center[0], title_text.center[1] - offset))
-            #     yield {'title_text': title_text}
 
     def dancing_cards_animation(self):
         def x1_t(t):
@@ -311,12 +295,6 @@ class StandardMode(State):
 
         previously_selected = None  # store previously selected object (mainly interested in cards)
         currently_selected = None  # store currently selected object
-
-        # print([(self.objects[name].calculate_value(), self.objects[name].calculate_suit(), self.objects[name].calculate_direction()) for name in self.caravan_names])
-        # print(str([[str(card) for card in self.objects[name].cards] for name in self.caravan_names]))
-        # print(str([(card.z_index, str(card)) for name in self.caravan_names[:3] for card in self.objects[name].cards]))
-        # print(str([(card.z_index, str(card)) for name in self.caravan_names[:3] for card, _ in self.objects[name].layers]))
-        # print(len(self.objects.keys()), self.objects.keys())
 
         # """
         # Update caravan counters.
@@ -586,11 +564,6 @@ class StandardMode(State):
         for t in range(int(graphics.FPS * seconds)):
             yield {'anonymous_button': self.objects['anonymous_button']}
 
-    # def add_card_to_playing_deck_animation(self, card):
-    #     self.objects['player_1_playing_deck'].cards.append(card)
-    #     self.objects['drawing_deck'].cards.pop(0)
-    #     yield {'anonymous_button': self.objects['anonymous_button']}
-
     def translate_card_on_top_of_card_animation(self, card, on_top_of_card, deck):
         angle = random.randint(-5, 0)  # TODO: OCD Mode (when the angle is set to just 0)
         if deck.cards[0] == on_top_of_card:
@@ -619,7 +592,6 @@ class StandardMode(State):
         cards = [card, layer_card, *adjacents]
         for i, c in enumerate(cards):
             self.animations.append(self.translate_card_animation(c, -200, random.randint(0, WINDOW_HEIGHT), -500, at_deck=f'anonymous_card_{i}'))
-        # deck.update()
         yield {f'anonymous_card_{i}': c for i, c in enumerate(cards)}
 
     def readjust_caravan_animation(self, deck: Caravan):
@@ -698,14 +670,6 @@ class StandardMode(State):
 
         p1_win_count = sum([1 if y > 26 or 26 >= x > y else 0 for x, y in [(c1, o1), (c2, o2), (c3, o3)]])
         return 1 if p1_win_count >= 2 else 2  # Return the number of the player that has more winning caravans
-
-    # def win_animation(self):
-    #     while True:
-    #         caravans = [self.objects[name] for name in self.caravan_names[:3]]
-    #         for caravan in caravans:
-    #             for card in caravan.cards:
-    #                 card.set_at(*card.center, (card.angle + 4) % 360)
-    #         yield {name: self.objects[name] for name in self.caravan_names[:3]}
 
     def win_animation(self, player=1):
         self.animations.append(self.dancing_counter_animation(player))
@@ -1204,7 +1168,6 @@ class PvPMode(State):
         cards = [card, layer_card, *adjacents]
         for i, c in enumerate(cards):
             self.animations.append(self.translate_card_animation(c, -200, random.randint(0, WINDOW_HEIGHT), -500, at_deck=f'anonymous_card_{i}'))
-        # deck.update()
         yield {f'anonymous_card_{i}': c for i, c in enumerate(cards)}
 
     def readjust_caravan_animation(self, deck: Caravan):
@@ -1218,12 +1181,10 @@ class PvPMode(State):
         for i, (layer_card, adjacents) in enumerate(deck.layers):
             layer_card: Card
             self.animations.append(self.translate_card_animation(layer_card, starting_x[player] + offset_x[caravan], starting_y[player] + 40 * i, layer_card.angle, at_deck=f'{str(deck)}_anonymous_card_{i}'))
-            # layer_card.z_index = i * 5
             for j, adj in enumerate(adjacents):
                 adj: Card
                 self.animations.append(self.translate_card_animation(adj, starting_x[player] + offset_x[caravan] + 20 * (j + 1), starting_y[player] + 40 * i, adj.angle, at_deck=f'{str(deck)}_anonymous_card__{i}_{j}'))
-                # adj.z_index = i * 5 + j + 1
-        # deck.update()
+
         yield {'anonymous_button': self.objects['anonymous_button']}
 
     def activate_joker_card_animation(self, card, on_top_of_card, decks: list[Caravan]):
@@ -1283,14 +1244,6 @@ class PvPMode(State):
 
         p1_win_count = sum([1 if y > 26 or 26 >= x > y else 0 for x, y in [(c1, o1), (c2, o2), (c3, o3)]])
         return 1 if p1_win_count >= 2 else 2  # Return the number of the player that has more winning caravans
-
-    # def win_animation(self):
-    #     while True:
-    #         caravans = [self.objects[name] for name in self.caravan_names[:3]]
-    #         for caravan in caravans:
-    #             for card in caravan.cards:
-    #                 card.set_at(*card.center, (card.angle + 4) % 360)
-    #         yield {name: self.objects[name] for name in self.caravan_names[:3]}
 
     def win_animation(self, player=1):
         self.animations.append(self.dancing_counter_animation(player))
@@ -1413,10 +1366,6 @@ class Button:
     def __init__(self, left, top, width, height, center_x=None, center_y=None, text='', is_clickable=True,
                  is_hovered=False, is_visible=True, z_index=0, is_hoverable=True, font_size=40, font_color=(0, 0, 0), color=(255, 255, 255, 255),
                  original_image=None, hovered_image=None):
-        # self.original_image = pygame.Surface((width, height)).convert_alpha()
-        # self.original_image.fill(color)
-        # self.image = pygame.Surface((width, height)).convert_alpha()
-        # self.image.fill(color)
         if original_image:
             self.original_image = original_image
             self.image = original_image.copy()
@@ -1433,8 +1382,6 @@ class Button:
         self.font_color = font_color
         self.default_font_color = font_color
 
-        # self.hovered_image = pygame.Surface((width + 10, height + 10)).convert_alpha()
-        # self.hovered_image.fill((255, 255, 0, 255))
         if hovered_image:
             self.hovered_image = hovered_image
         else:
@@ -1541,7 +1488,6 @@ class Mute(Button):
     def click(self, x, y):
         if self.rect.collidepoint(x, y):
             self.is_selected = True
-            self.is_pressed = not self.is_pressed
         else:
             self.is_selected = False
 
