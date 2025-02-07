@@ -1534,11 +1534,9 @@ class Mute(Button):
             'sound_mute': pygame.image.load('assets/backgrounds/sound_muted_button_neutral.png'),
             'sound_mute_hovered': pygame.image.load('assets/backgrounds/sound_muted_button_hover.png')
         }
-        # for key, value in self.images.items():
-        #     self.images[key] = pygame.transform.scale(value, (128, 128))
         self.is_neutral = is_neutral
 
-        self.image = self.images['sound_neutral']
+        self.image = self.images['sound_neutral'] if self.is_neutral else self.images['sound_mute']
 
     def click(self, x, y):
         if self.rect.collidepoint(x, y):
