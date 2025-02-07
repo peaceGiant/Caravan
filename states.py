@@ -804,9 +804,6 @@ class PvPMode(State):
         hand_cards, draw_cards = generate_valid_player_and_drawing_deck()
 
         self.objects['player_2_playing_deck']: PlayingDeck = PlayingDeck(player=2, cards=generate_player_2_hand_cards(8, cards=hand_cards))
-        for card in self.objects['player_2_playing_deck'].cards:
-            card.is_flipped = True
-
         self.objects['drawing_deck_2']: DrawingDeck = DrawingDeck(cards=generate_drawing_deck_2_cards(54, cards=draw_cards))
 
         self.player_1_turn = True
@@ -863,6 +860,7 @@ class PvPMode(State):
         # Handle scenario if card from player_1_playing_deck is played.
         # """
         player_1_playing_deck: PlayingDeck = self.objects['player_1_playing_deck']
+        player_2_playing_deck: PlayingDeck = self.objects['player_2_playing_deck']
         if player_1_playing_deck.contains(previously_selected) and self.player_1_turn and not self.animation_cooldown:
             # """
             # Handle card being discarded.
@@ -880,7 +878,8 @@ class PvPMode(State):
                         self.wait_animation(.2),
                         self.flip_over_card_animation(player_1_playing_deck.cards[-1]),
                         self.wait_animation(.2),
-                        self.respace_player_hand_animation(player_1_playing_deck)
+                        self.respace_player_hand_animation(player_1_playing_deck),
+                        self.end_turn_for_player_animation(1, player_1_playing_deck, player_2_playing_deck)
                     )
                 )
                 return self
@@ -929,7 +928,7 @@ class PvPMode(State):
                             self.wait_animation(.5),
                             self.readjust_caravans_animation([self.objects[name] for name in self.caravan_names])
                         ))
-                    if len(player_1_playing_deck.cards) < 5:
+                    if len(player_1_playing_deck.cards) < 5 and len(self.objects['drawing_deck'].cards) > 0:
                         player_1_playing_deck.add_card(top_card := self.objects['drawing_deck'].cards[0])
                         self.objects['drawing_deck'].remove_card(top_card)
 
@@ -940,10 +939,14 @@ class PvPMode(State):
                             self.wait_animation(.2),
                             self.flip_over_card_animation(top_card),
                             self.wait_animation(.2),
-                            self.respace_player_hand_animation(player_1_playing_deck)
+                            self.respace_player_hand_animation(player_1_playing_deck),
+                            self.end_turn_for_player_animation(1, player_1_playing_deck, player_2_playing_deck)
                         ))
                     else:
-                        self.animations.append(self.respace_player_hand_animation(player_1_playing_deck))
+                        self.animations.append(chain(
+                            self.respace_player_hand_animation(player_1_playing_deck),
+                            self.end_turn_for_player_animation(1, player_1_playing_deck, player_2_playing_deck)
+                        ))
                     return self
 
         # """
@@ -960,12 +963,15 @@ class PvPMode(State):
                 for i, card in enumerate(caravan.cards[1:]):
                     caravan.remove_card(card)
                     self.animations.append(self.translate_card_animation(card, -200, random.randint(0, WINDOW_HEIGHT), -500, at_deck=f'anonymous_card_{i}'))
+                self.animations.append(chain(
+                    self.wait_animation(.6),
+                    self.end_turn_for_player_animation(1, player_1_playing_deck, player_2_playing_deck)
+                ))
                 return self
 
         # """
         # Player 2 turn handling.
         # """
-        player_2_playing_deck: PlayingDeck = self.objects['player_2_playing_deck']
         if player_2_playing_deck.contains(previously_selected) and not self.player_1_turn and not self.animation_cooldown:
             # """
             # Handle card being discarded.
@@ -973,7 +979,7 @@ class PvPMode(State):
             if currently_selected == self.objects['trash_button'] and self.player_2_beginning_phase_counter == 0:
                 self.player_1_turn = True
                 player_2_playing_deck.remove_card(previously_selected)
-                self.animations.append(self.respace_player_hand_animation(PlayingDeck(cards=player_2_playing_deck.cards[:]), player=2))
+                self.animations.append(self.respace_player_hand_animation(PlayingDeck(player=2, cards=player_2_playing_deck.cards[:]), player=2))
 
                 player_2_playing_deck.add_card(self.objects['drawing_deck_2'].cards[0])
                 self.objects['drawing_deck_2'].cards.pop(0)
@@ -983,7 +989,8 @@ class PvPMode(State):
                         self.wait_animation(.2),
                         self.flip_over_card_animation(player_2_playing_deck.cards[-1]),
                         self.wait_animation(.2),
-                        self.respace_player_hand_animation(player_2_playing_deck, player=2)
+                        self.respace_player_hand_animation(player_2_playing_deck, player=2),
+                        self.end_turn_for_player_animation(2, player_1_playing_deck, player_2_playing_deck)
                     )
                 )
                 return self
@@ -1043,10 +1050,14 @@ class PvPMode(State):
                             self.wait_animation(.2),
                             self.flip_over_card_animation(top_card),
                             self.wait_animation(.2),
-                            self.respace_player_hand_animation(player_2_playing_deck, player=2)
+                            self.respace_player_hand_animation(player_2_playing_deck, player=2),
+                            self.end_turn_for_player_animation(2, player_1_playing_deck, player_2_playing_deck)
                         ))
                     else:
-                        self.animations.append(self.respace_player_hand_animation(player_2_playing_deck, player=2))
+                        self.animations.append(chain(
+                            self.respace_player_hand_animation(player_2_playing_deck, player=2),
+                            self.end_turn_for_player_animation(2, player_1_playing_deck, player_2_playing_deck)
+                        ))
                     return self
 
         # """
@@ -1063,6 +1074,10 @@ class PvPMode(State):
                 for i, card in enumerate(caravan.cards[1:]):
                     caravan.remove_card(card)
                     self.animations.append(self.translate_card_animation(card, -200, random.randint(0, WINDOW_HEIGHT), -500, at_deck=f'anonymous_card_2_{i}'))
+                self.animations.append(chain(
+                    self.wait_animation(.6),
+                    self.end_turn_for_player_animation(2, player_1_playing_deck, player_2_playing_deck)
+                ))
                 return self
 
         return self
@@ -1271,21 +1286,35 @@ class PvPMode(State):
                     for counter in counters:
                         counter.font_color = (t, t, t)
                     yield {name: counter for name, counter in zip(counter_names, counters)}
-            # for t in range(40):
-            #     parity = -1 if t % 2 == 0 else 1
-            #     for counter in counters:
-            #         counter.update(center=(counter.center[0] - 1, counter.center[1]))
-            #     yield {counter_name: counter for counter_name, counter in zip(self.counter_names, counters)}
-            # for t in range(80):
-            #     parity = -1 if t % 2 == 0 else 1
-            #     for counter in counters:
-            #         counter.update(center=(counter.center[0] + 1, counter.center[1]))
-            #     yield {counter_name: counter for counter_name, counter in zip(self.counter_names, counters)}
-            # for t in range(40):
-            #     parity = -1 if t % 2 == 0 else 1
-            #     for counter in counters:
-            #         counter.update(center=(counter.center[0] - 1, counter.center[1]))
-            #     yield {counter_name: counter for counter_name, counter in zip(self.counter_names, counters)}    
+
+    def flip_over_deck_animation(self, deck):
+        for card in deck.cards:
+            self.animations.append(self.flip_over_card_animation(card))
+        yield {'anonymous_button': self.objects['anonymous_button']}
+
+    def end_turn_for_player_animation(self, player, player_1_playing_deck, player_2_playing_deck):
+        if player == 1:
+            return chain(
+                self.flip_over_deck_animation(player_1_playing_deck),
+                self.wait_animation(.6),
+                self.respace_player_hand_animation(player_1_playing_deck),
+                self.wait_animation(.2),
+                self.flip_over_deck_animation(player_2_playing_deck),
+                self.wait_animation(.6),
+                self.respace_player_hand_animation(player_2_playing_deck, player=2),
+                self.wait_animation(.2)
+            )
+        else:
+            return chain(
+                self.flip_over_deck_animation(player_2_playing_deck),
+                self.wait_animation(.6),
+                self.respace_player_hand_animation(player_2_playing_deck, player=2),
+                self.wait_animation(.2),
+                self.flip_over_deck_animation(player_1_playing_deck),
+                self.wait_animation(.6),
+                self.respace_player_hand_animation(player_1_playing_deck),
+                self.wait_animation(.2)
+            )
 
 
 class Quit(State):
